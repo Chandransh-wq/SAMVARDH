@@ -1,0 +1,1 @@
+This is a educational website which uses wikipedia and other similar sources along with multiple ai sources to porvide to the user the best information regarding a topic there is, the user may also get a pdf of the information attained

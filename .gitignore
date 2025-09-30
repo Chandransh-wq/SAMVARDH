@@ -1,0 +1,84 @@
+# =====================
+# Node Modules & Package Logs
+# =====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =====================
+# Environment Variables
+# =====================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.local
+
+# =====================
+# Build / Output Directories
+# =====================
+dist/
+dist-ssr/
+build/
+out/
+coverage/
+.next/
+
+# =====================
+# Logs & PID Files
+# =====================
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# =====================
+# OS Generated Files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Editors & IDEs
+# =====================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =====================
+# Temporary / Cache Files
+# =====================
+.npm
+.eslintcache
+.node_repl_history
+tmp/
+temp/
+.yarn-integrity
+
+# =====================
+# React Native / Mobile
+# =====================
+ios/
+android/
+*.keystore
+*.jks
+
+# =====================
+# Miscellaneous
+# =====================
+*.tgz
+*.bak
+*.swp
