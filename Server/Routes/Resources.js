@@ -2,6 +2,8 @@
 import express from "express";
 import { sayBye, sayHello } from "../Controller/CreationPaths.js";
 import { loginUser, registerUser } from "../Controller/userController.js";
+import CreateNewNotebook from "../Controller/NotebookController.js";
+import authMiddleware from "../MiddleWare/AuthMiddleWare.js";
 
 const router = express.Router();
 
@@ -9,6 +11,7 @@ const router = express.Router();
 router.get("/hello", sayHello);
 router.get('/bye', sayBye);
 router.post('/register', registerUser);
-router.post('/login', loginUser)
+router.post('/login', loginUser);
+router.post('/notebook/create', authMiddleware, CreateNewNotebook);
 
 export default router;

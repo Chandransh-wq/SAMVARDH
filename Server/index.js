@@ -1,29 +1,19 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import cors from 'cors';
-import router from './Routes/Resources.js'; // note the .js extension
+import notebookRouter from './Routes/Resources.js'; // router with your endpoints
 
 dotenv.config();
-
-const PORT = process.env.PORT || 5000;
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/api', router);
+app.use('/api', notebookRouter);
 
-// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.log('❌ Error Occurred: ' + err));
+  .catch(err => console.log('❌ MongoDB connection error: ' + err));
 
-// Test route
-app.get('/', (req, res) => {
-  res.send('Backend is running...');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
