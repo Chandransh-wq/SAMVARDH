@@ -9,6 +9,7 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Subject from './pages/Subject'
 import TopicPage from './pages/TopicPage'
+import LoginRegister from './pages/LoginRegister'
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -28,6 +29,7 @@ function App() {
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <Routes>
         <Route path='/' element={<Dashboard darkMode={darkMode} />} />
+        <Route path='/log' element={<LoginRegister />} />
         <Route path='/notebooks' element={<Notebook darkMode={darkMode} />} />
         <Route path='/notebook/:id' element={<Subject darkMode={darkMode} />} />
         <Route path='/subject/:id' element={<TopicPage darkMode={darkMode} />} />
