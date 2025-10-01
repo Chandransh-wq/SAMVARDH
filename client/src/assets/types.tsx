@@ -36,7 +36,7 @@ export interface Subject {
 
 // Notebook
 export interface Notebook {
-  id?: string; // optional, will be _id in Mongo
+  _id?: string; // optional, will be _id in Mongo
   title: string;
   icon?: string;
   description?: string;

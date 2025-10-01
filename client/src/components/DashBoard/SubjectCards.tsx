@@ -23,7 +23,16 @@ const SubjectCards = () => {
   const handlePrev = () => setCurrentIndex(prevIndex);
   const handleNext = () => setCurrentIndex(nextIndex);
 
-  const visibleItems = [prevIndex, currentIndex, nextIndex];
+  const visibleItems = subjects.length == 1 ? [
+    currentIndex
+  ] : subjects.length == 2 ? [
+    prevIndex, 
+    currentIndex, 
+  ] : [
+    prevIndex,
+    currentIndex,
+    nextIndex
+  ];
 
   return (
     <div className="relative flex items-center justify-center gap-4 w-fit overflow-hidden">
@@ -39,7 +48,7 @@ const SubjectCards = () => {
         {visibleItems.map((idx: number) => {
           const data = subjects[idx];
           return (
-            <AnimatePresence key={idx}>
+            <AnimatePresence key={idx+1}>
               <motion.div
                 key={idx}
                 style={{ backgroundColor: data.color }}

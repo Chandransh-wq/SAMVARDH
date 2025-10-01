@@ -8,7 +8,6 @@ const LoginRegister: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
   const navigate = useNavigate()
 
   const handleLogin = async (email: string, password: string) => {
@@ -16,14 +15,13 @@ const LoginRegister: React.FC = () => {
       const USER = await loginUser(email, password);
 
       if (!USER.token) {
-        setMessage("No token received from server");
+        toast.error("No token received from server");
         return;
       }
 
       // Save token immediately
       localStorage.setItem("token", USER.token);
-      toast.success("Login Successful")
-      setMessage("Login successful!");
+      toast.success("Login Successful");
       navigate('/')
     } catch (error: any) {
       console.error(error);
@@ -36,7 +34,7 @@ const LoginRegister: React.FC = () => {
       const USER = await registerUser(name, email, password);
 
       if (!USER.token) {
-        setMessage("Registration failed: No token received");
+        toast.error("Registration failed: No token received");
         return;
       }
 
