@@ -1,15 +1,24 @@
-import { useState } from "react";
-import { getInitials, Subject } from "../../assets/functions";
+import { useState, useEffect } from "react";
+import { getInitials, getComputedData } from "../../assets/functions";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 
-
-
 const SubjectCards = () => {
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const prevIndex = (currentIndex - 1 + Subject.length) % Subject.length;
-  const nextIndex = (currentIndex + 1) % Subject.length;
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const { subjects } = await getComputedData(); // fetch live subjects
+      setSubjects(subjects);
+    };
+    fetchSubjects();
+  }, []);
+
+  if (!subjects.length) return null; // or a loader
+
+  const prevIndex = (currentIndex - 1 + subjects.length) % subjects.length;
+  const nextIndex = (currentIndex + 1) % subjects.length;
 
   const handlePrev = () => setCurrentIndex(prevIndex);
   const handleNext = () => setCurrentIndex(nextIndex);
@@ -28,7 +37,7 @@ const SubjectCards = () => {
 
       <div className="flex">
         {visibleItems.map((idx: number) => {
-          const data = Subject[idx];
+          const data = subjects[idx];
           return (
             <AnimatePresence key={idx}>
               <motion.div
@@ -40,15 +49,13 @@ const SubjectCards = () => {
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3 }}
               >
-                <span className="text-2xl font-bold mb-2">
-                  {data.title}
-                </span>
+                <span className="text-2xl font-bold mb-2">{data.title}</span>
                 <div className="text-left flex flex-wrap gap-2 text-xl">
-                {data.topics.map((topic: { title: string }, idx: number) => (
-                  <div key={idx} className="text-sm h-fit w-fit p-2 px-3 bg-white text-black rounded-full flex items-center justify-center">
-                    {getInitials(topic.title)}
-                  </div>
-                ))}
+                  {data.topics.map((topic: { title: string }, idx: number) => (
+                    <div key={idx} className="text-sm h-fit w-fit p-2 px-3 bg-white text-black rounded-full flex items-center justify-center">
+                      {getInitials(topic.title)}
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             </AnimatePresence>

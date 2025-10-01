@@ -10,32 +10,78 @@ import Settings from './pages/Settings'
 import Subject from './pages/Subject'
 import TopicPage from './pages/TopicPage'
 import LoginRegister from './pages/LoginRegister'
+import { Toaster } from 'sonner'
+import ProtectedRoute from './pages/ProtectedRoute'
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
-    // Initialize state from localStorage
     const storedDarkMode = localStorage.getItem('darkMode')
     return storedDarkMode ? JSON.parse(storedDarkMode) : false
   })
 
   useEffect(() => {
-    // Update localStorage whenever darkMode changes
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
 
   return (
     <div className=''>
+      <Toaster position="bottom-right" richColors />
       <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} />
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <Routes>
-        <Route path='/' element={<Dashboard darkMode={darkMode} />} />
-        <Route path='/log' element={<LoginRegister />} />
-        <Route path='/notebooks' element={<Notebook darkMode={darkMode} />} />
-        <Route path='/notebook/:id' element={<Subject darkMode={darkMode} />} />
-        <Route path='/subject/:id' element={<TopicPage darkMode={darkMode} />} />
-        <Route path='/profile' element={<Profile darkMode={darkMode} />} />
-        <Route path='/settings' element={<Settings darkMode={darkMode} />} />
-        <Route path='/about' element={<div>About</div>} />
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notebooks"
+          element={
+            <ProtectedRoute>
+              <Notebook darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notebook/:id"
+          element={
+            <ProtectedRoute>
+              <Subject darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subject/:id"
+          element={
+            <ProtectedRoute>
+              <TopicPage darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public routes */}
+        <Route path="/log" element={<LoginRegister />} />
+        <Route path="/about" element={<div>About</div>} />
       </Routes>
     </div>
   )

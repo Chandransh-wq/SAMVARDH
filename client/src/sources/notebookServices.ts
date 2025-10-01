@@ -44,16 +44,27 @@ export interface Notebook {
   subjects?: subject[]
 }
 
-
 // GET all notebooks
 export const getNotebooks = async (): Promise<Notebook[]> => {
-  const response = await api.get('/notebooks/get'); // JWT header should be included
-  return response.data.notebooks; // extract notebooks array from backend
+  try {
+    const token = localStorage.getItem("token") || "";
+    const res = await api.get("/notebook/get", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data.notebooks || [];
+  } catch (error) {
+    console.error("Failed to fetch notebooks:", error);
+    return [];
+  }
 };
 
-
-// POST new notebook
-export const createNotebook = async (data: Notebook): Promise<Notebook> => {
-  const response = await api.post('/notebooks/create', data);
-  return response.data;
+// CREATE a new notebook
+export const createNotebook = async (
+  data: Notebook
+): Promise<Notebook> => {
+  const res = await api.post<Notebook>("/notebook/create", data);
+  return res.data;
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { loginUser, registerUser } from "../sources/loginServices";
-import { getNotebooks, type Notebook } from "../sources/notebookServices";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const LoginRegister: React.FC = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -8,103 +9,112 @@ const LoginRegister: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (email: string, password: string) => {
     try {
-      if (isRegister) {
-        const res = await registerUser(name, email, password);
-        setMessage(`Registered: ${res.newUser}`);
-      } else {
-        const res = await loginUser(email, password);
-        setMessage(`Logged in as: ${res.user.name}`);
+      const USER = await loginUser(email, password);
 
-        // Fetch notebooks AFTER login
-        const userNotebooks = await getNotebooks(); // backend uses JWT to filter by user
-        setNotebooks(userNotebooks); // store actual Notebook array
+      if (!USER.token) {
+        setMessage("No token received from server");
+        return;
       }
-    } catch (err: any) {
-      setMessage(err.response?.data?.message || "Error occurred");
+
+      // Save token immediately
+      localStorage.setItem("token", USER.token);
+      toast.success("Login Successful")
+      setMessage("Login successful!");
+      navigate('/')
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Login failed!");
+    }
+  };
+
+  const handleRegister = async (name: string, email: string, password: string) => {
+    try {
+      const USER = await registerUser(name, email, password);
+
+      if (!USER.token) {
+        setMessage("Registration failed: No token received");
+        return;
+      }
+
+      // Save token immediately
+      localStorage.setItem("token", USER.token);
+
+      toast.success("Registration successful!");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Registration failed!");
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isRegister) {
+      handleRegister(name, email, password);
+    } else {
+      handleLogin(email, password);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      {/* Login/Register Form */}
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mb-6">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {isRegister ? "Register" : "Login"}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 p-6">
+      {/* Login/Register Card */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-10">
+        <h2 className="text-3xl font-extrabold mb-6 text-center text-gray-800">
+          {isRegister ? "Create Account" : "Welcome Back"}
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {isRegister && (
-            <div>
-              <label className="block mb-1 font-medium">Name</label>
+            <div className="flex flex-col">
+              <label className="mb-2 font-semibold text-gray-700">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800"
               />
             </div>
           )}
-          <div>
-            <label className="block mb-1 font-medium">Email</label>
+          <div className="flex flex-col">
+            <label className="mb-2 font-semibold text-gray-700">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800"
             />
           </div>
-          <div>
-            <label className="block mb-1 font-medium">Password</label>
+          <div className="flex flex-col">
+            <label className="mb-2 font-semibold text-gray-700">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800"
             />
           </div>
           <button
             type="submit"
-            className="w-full py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition"
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all"
           >
-            {isRegister ? "Register" : "Login"}
+            {isRegister ? "Sign Up" : "Login"}
           </button>
         </form>
-
-        <p className="mt-4 text-center text-gray-600">
-          {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button
-            className="text-blue-500 font-medium hover:underline"
-            onClick={() => setIsRegister(!isRegister)}
-          >
-            {isRegister ? "Login" : "Register"}
-          </button>
+        <p
+          className="mt-6 text-center text-sm text-gray-500 cursor-pointer hover:underline"
+          onClick={() => setIsRegister(!isRegister)}
+        >
+          {isRegister
+            ? "Already have an account? Login"
+            : "Don't have an account? Sign Up"}
         </p>
-
-        {message && (
-          <p className="mt-4 text-center text-red-500 font-medium">{message}</p>
-        )}
       </div>
-
-      {/* Display Notebooks */}
-      {notebooks.length > 0 && (
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notebooks.map((nb) => (
-            <div key={nb._id} className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition">
-              <h3 className="text-xl font-bold mb-2">{nb.title}</h3>
-              <p className="text-gray-600 mb-2">{nb.description}</p>
-              <p className="text-sm text-gray-500">Created: {new Date(nb.createdAt).toLocaleDateString()}</p>
-              <p className="text-sm text-gray-500">Favourite: {nb.favourite ? "Yes" : "No"}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

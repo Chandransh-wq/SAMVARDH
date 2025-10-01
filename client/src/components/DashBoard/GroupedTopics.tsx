@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { getInitials, TopicArray } from '../../assets/functions';
+import type { Topic } from '../../assets/types';
 
 interface GroupedTopicsProps {
   darkMode?: boolean;
@@ -7,14 +8,27 @@ interface GroupedTopicsProps {
 }
 
 const GroupedTopics: React.FC<GroupedTopicsProps> = ({ darkMode, date }) => {
-  const topics = TopicArray(date);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      setLoading(true);
+      const data = await TopicArray(date);
+      setTopics(data);
+      setLoading(false);
+    };
+    fetchTopics();
+  }, [date]);
+
+  if (loading) return <div>Loading topics...</div>;
 
   return (
     <div className={`${darkMode ? 'bg-[#190019]' : 'bg-zinc-50'} p-4 rounded-lg shadow-md w-full h-full`}>
       {topics.length > 0 ? (
         <div className="relative flex flex-col gap-6">
           {topics.map((topic, idx) => (
-            <div key={topic.id} className="flex gap-4 relative">
+            <div key={topic._id} className="flex gap-4 relative">
               {/* ICON WITH LINE */}
               <div className="relative flex flex-col items-center">
                 {/* Icon */}

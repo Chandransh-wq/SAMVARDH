@@ -1,4 +1,4 @@
-import { notebookData } from "./demodata";
+import { getNotebooks } from "../sources/notebookServices";
 import { 
   AiOutlineLogin, 
   AiOutlineLogout, 
@@ -8,6 +8,7 @@ import {
   AiOutlineFolder, 
   AiOutlineDelete 
 } from "react-icons/ai";
+import type { Topic } from "./types";
 /**
  * Returns the initials of a given name.
  * Example: "John Doe" → "JD"
@@ -24,49 +25,39 @@ const getInitials = (name: string) => {
 /**
  * Total number of notebooks
  */
-const notebookLength = notebookData.length;
 
-/**
- * Total number of topics across all notebooks
- */
-const topicLength = notebookData.reduce(
-  (acc, notebook) =>
-    acc + notebook.subjects.reduce((subAcc, subject) => subAcc + subject.topics.length, 0),
-  0
-);
+export const getComputedData = async () => {
+  const notebooks = await getNotebooks();
+  const subjects = notebooks.flatMap(nb => nb.subjects || []);
+  const topics = notebooks.flatMap(nb =>
+    (nb.subjects || []).flatMap(sub =>
+      (sub.topics || []).map(topic => ({
+        ...topic,
+        subjectId: sub._id,
+        subjectTitle: sub.title,
+        notebookId: nb._id,
+        notebookTitle: nb.title
+      }))
+    )
+  );
 
-/**
- * Total number of subjects across all notebooks
- */
-const subjectLength = notebookData.reduce((acc, notebook) => acc + notebook.subjects.length, 0);
+  return {
+    notebooks,
+    subjects,
+    topics,
+    notebookLength: notebooks.length,
+    subjectLength: subjects.length,
+    topicLength: topics.length
+  };
+};
 
-/**
- * Flattened array of all subjects from all notebooks
- */
-const Subject = notebookData.flatMap((notebook) => notebook.subjects);
 
-/**
- * Flattened array of all topics from all subjects in all notebooks
- * Includes subjectId and subjectTitle for context
- */
-const Topic = notebookData.flatMap((notebook) =>
-  notebook.subjects.flatMap((subject) =>
-    subject.topics.map((topic) => ({
-      ...topic,
-      subjectId: subject.id,
-      subjectTitle: subject.title,
-      notebookId: notebook.id,
-      notebookTitle: notebook.title
-    }))
-  )
-);
-
-interface contentProp {
+export interface contentProp {
   page: string;
   pageContent: string;
 }
 
-interface topicProp {
+export interface topicProp {
     id: string,
     title: string,
     color: string,
@@ -76,11 +67,13 @@ interface topicProp {
     content: contentProp[],
 }
 
-const TopicArray = (date: string) => {
-  const arr: topicProp[] = []
-  Topic.map((topic)=>{topic.dueDate == date ? arr.push(topic) : null})
-  return arr;
-}
+
+
+
+const TopicArray = async (date: string): Promise<Topic[]> => {
+  const { topics } = await getComputedData();
+  return topics.filter(topic => topic.dueDate === date);
+};
 
 const getIcon = (title: string): React.ReactElement => {
   switch (title.toLowerCase()) {
@@ -133,11 +126,9 @@ const getRandomColor = () => {
 
 export {
   getInitials,
-  notebookLength,
-  topicLength,
-  subjectLength,
-  Subject,
-  Topic,
+  
+  
+  
   TopicArray,
   getIcon,
   hexToRgba,
