@@ -15,6 +15,7 @@ const contentSchema = new mongoose.Schema({
     },
     editedAt: {
         type: Date,
+        default: Date.now,
     },
     tags: {
         type: [String],
@@ -41,6 +42,7 @@ const TopicSchema = new mongoose.Schema({
     },
     dueDate: {
         type: Date,
+        default: Date.now,
     },
     content: {
         type: [contentSchema],

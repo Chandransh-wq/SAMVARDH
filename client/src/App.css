@@ -103,3 +103,9 @@
 .my-scrollbar::-webkit-scrollbar-track-piece{
   width: 0px;
 }
+
+.ant-slider-mark-text {
+  color: #F97316;   /* your orange */
+  font-weight: bold;
+  font-size: 0.875rem; /* 14px */
+}

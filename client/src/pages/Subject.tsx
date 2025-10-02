@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getComputedData, hexToRgba } from '../assets/functions';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { FiArrowRight, FiCalendar, FiClock, FiStar } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiClock, FiPlus, FiStar } from 'react-icons/fi';
 import { basic } from '../assets/Illustraitions/basics';
 import Carsouls from '../components/DashBoard/Carsouls';
 import type { Notebook, subject, topic } from '../sources/notebookServices';
+import CreateSubjectForm from '../components/CreateSubjectForm';
+import CreateTopicForm from '../components/CreateTopicForm';
 
 interface SubjectProps {
   darkMode: boolean;
@@ -24,7 +26,8 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [monthWindowStart, setMonthWindowStart] = useState(Math.max(0, today.getMonth() - 2));
-
+  const [showForm, setShowForm] = useState(false)
+  const [showFormTopic, setShowFormTopic] = useState(false)
   const dayContainerRef = useRef<HTMLDivElement>(null);
 
   const months = [
@@ -75,6 +78,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
   const options2: Intl.DateTimeFormatOptions = { weekday: "short" };
   const options3: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
   const options4: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  
 
   const CarsoulArray = [
     { name: "By Due Day", number: 1 },
@@ -104,6 +108,25 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
       className={`${darkMode ? 'primary-dark' : 'primary-light'} flex justify-evenly h-[92vh] md:w-[calc(100%)] absolute md:top-[4.5rem] pt-5 top-0 left-0 w-screen pl-16 gap-5`}
     >
       {/* LEFT PANEL */}
+      {showForm &&
+        <div className='fixed left-[20.2rem] top-[12rem] z-50'>
+          <CreateSubjectForm 
+            setOpen={setShowForm}
+            id={id ? id : ""}
+            darkMode={darkMode} 
+          />
+        </div>
+      }
+      {showFormTopic &&
+        <div className='fixed left-[20.2rem] top-[12rem] z-50'>
+          <CreateTopicForm
+            subjectId={notebook?.subjects?.[selected]._id ? notebook?.subjects?.[selected]._id : ""}
+            setOpen={setShowFormTopic}
+            id={id ? id : ""}
+            darkMode={darkMode} 
+          />
+        </div>
+      }
       <div className="w-1/2 text-left pl-12">
         {/* Header */}
         <div>
@@ -125,10 +148,17 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
 
         {/* Subject List */}
         <div className='mt-5'>
-          <span className='text-2xl tracking-wider font-semibold mb-4'>
-            Subjects:
-          </span>
-          <div className='mt-5 flex flex-col gap-15'>
+          <div>
+            <div>
+              <button className='flex gap-4 items-center' onClick={()=>setShowForm(true)}>
+                <FiPlus />Create
+              </button>
+            </div>
+            <span className='text-2xl tracking-wider font-semibold mb-4'>
+              Subjects:
+            </span>
+          </div>
+          <div className='mt-5 w-full flex flex-col gap-15 h-[40rem] my-scrollbar pb-4 px-2 overflow-scroll'>
             {notebook?.subjects?.map((subject: subject, idx: number) => {
               const tagKey = subject.tags.find(tag => tag in basic) || "Other";
               return (
@@ -241,8 +271,13 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
         </div>
 
         {/* Topics Header */}
-        <div className='text-left text-lg tracking-wide font-semibold mb-4'>
-          Topics for {selectedSubject?.title || "N/A"}:
+        <div className='flex items-center justify-between'>
+          <div className='text-left text-lg tracking-wide font-semibold mb-4'>
+            Topics for {selectedSubject?.title || "N/A"}:
+          </div>
+            <button className='flex gap-4 items-center bg-orange-500 p-2 px-5 text-white rounded-full' onClick={()=>setShowFormTopic(true)}>
+              <FiPlus />Create
+            </button>
         </div>
 
         {/* Topics List */}
@@ -261,14 +296,14 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                   </svg>
                 </span>
 
-                <div className='flex flex-col text-left text-sm'>
-                  <span className='text-xl tracking-wider flex items-center justify-between pr-3 font-normal'>
+                <div className='flex flex-col text-left text-sm w-full'>
+                  <div className='text-xl w-full  tracking-wider flex items-center justify-between pr-3 font-normal'>
                     <span style={{ fontWeight: "2rem" }}>{topic.title}</span>
                     <span className='text-sm mt-3 tracking-wide text-zinc-500 font-semibold relative -top-1'>
                       {topic.dueDate ? new Date(topic.dueDate).toLocaleDateString("en-UK", options4) : "-"}
                     </span>
-                  </span>
-                  <span className={`text-sm tracking-wide ${darkMode ? "text-zinc-300" : "text-zinc-600"} flex items-center pr-3 group-hover:translate-x-4 transition-all duration-100`}>
+                  </div>
+                  <span className={`text-sm tracking-wide ${darkMode ? "text-zinc-300" : "text-zinc-600"} flex items-center pr-3 group-hover:translate-x-4 transition-all duration-100 justify-between`}>
                     {topic.description}
                     <div className={`${darkMode ? "bg-zinc-900" : "bg-white"} h-fit w-fit p-2 rounded-full shadow`}>
                       <FiArrowRight />

@@ -22,6 +22,18 @@ export interface Topic {
   notebookTitle?: string;
 }
 
+export interface Topics {
+  title: string;
+  color: string;
+  importance?: number;
+  description: string;
+  dueDate?: string;
+  content?: Content[];
+  subjectId?: string;
+  subjectTitle?: string;
+  notebookId?: string;
+  notebookTitle?: string;
+}
 
 // Subject inside a notebook
 export interface Subject {

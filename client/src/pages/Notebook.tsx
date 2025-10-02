@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { FiArrowRight, FiCalendar, FiClock, FiDownload } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiClock, FiDownload, FiPlus } from 'react-icons/fi';
 import { MdInfo } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import { getComputedData, hexToRgba } from '../assets/functions';
 import { basic } from '../assets/Illustraitions/basics';
 import type { Notebook } from '../assets/types';
+import CreateNotebookForm from '../components/CreateNotebookForm';
 
 interface NotebookProps {
-  darkMode?: boolean;
+  darkMode: boolean;
 }
 
 const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
   const [selected, setSelected] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const [notebookData, setNotebook] = useState<Notebook[]>([]);
-
+  const [showForm, setShowForm] = useState(false)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,56 +36,70 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
         darkMode ? 'primary-dark' : 'primary-light'
       } flex justify-evenly h-[92vh] -z-10 md:w-[calc(100%)] absolute md:top-[4.5rem] pt-5 top-0 left-0 w-screen`}
     >
+      {showForm &&
+        <div className='fixed left-[20.2rem] top-[12rem] z-50'>
+          <CreateNotebookForm 
+            setOpen={setShowForm}
+            darkMode={darkMode} 
+          />
+        </div>
+      }
       {/* MAIN WRAPPER */}
       <div className="w-[calc(100%-7rem)] relative left-9 flex gap-5">
         {/* LEFT SIDE — Notebook Cards */}
         <div
-          className={`w-1/2 h-[calc(100%-0.5rem)] overflow-auto ${
+          className={`w-1/2 h-[calc(100%-0.5rem)] overflow-auto my-scrollbar ${
             darkMode ? 'bg-zinc-800' : 'primary-light'
           }`}
         >
+          <div className='text-left pl-5 my-4 flex justify-between pr-5 items-center'>
+            <span className='text-4xl font-bold'>Your Notebooks</span>
+            <div className='bg-orange-600 text-white p-3 rounded-full shadow-md px-6'>
+              <button className='flex gap-4 items-center' onClick={()=>setShowForm(true)}>
+                <FiPlus />Create
+              </button>
+            </div>
+          </div>
           <div className="flex flex-col gap-4">
-            {notebookData.map((notebook, idx) => (
-              <div
-                key={notebook._id} // use stable key
-                className="w-full h-[14rem] rounded-[3.5rem] p-6 flex text-left"
-                style={{
-                  backgroundColor: darkMode
-                    ? notebook.color
-                    : hexToRgba(notebook.color ?? '', 0.3),
-                }}
-                onClick={() => setSelected(idx)}
-              >
-                {/* Notebook Icon */}
-                <div className="w-1/4 text-[10rem] font-thin"></div>
-
-                {/* Notebook Title & Description */}
-                <div className="w-1/2 flex flex-col">
-                  <span className="text-[1.7rem] font-semibold">{notebook.title}</span>
-                  <span>{notebook.description}</span>
+            {notebookData.map((notebook, idx) => {
+              const titleKey = Object.keys(basic).find(key => notebook.title.includes(key)) || "Other";
+            
+              return (
+                <div key={notebook._id} className="w-full h-[14rem] rounded-[3.5rem] p-6 flex text-left" 
+                     style={{ backgroundColor: darkMode ? notebook.color : hexToRgba(notebook.color ?? '', 0.3) }}
+                     onClick={() => setSelected(idx)}>
+                    
+                  <div className="w-1/4 text-[10rem] font-thin">
+                    <div dangerouslySetInnerHTML={{ __html: basic[titleKey as keyof typeof basic] }} />
+                  </div>
+              
+                  <div className="w-1/2 flex flex-col">
+                    <span className="text-[1.7rem] font-semibold">{notebook.title}</span>
+                    <span>{notebook.description}</span>
+                  </div>
+              
+                  <div className="flex flex-col items-center text-black">
+                    <svg width="1" className="relative left-15" height="120%" xmlns="http://www.w3.org/2000/svg">
+                      <line x1="1" y1="0" x2="1" y2="100" stroke="black" strokeWidth="2" />
+                    </svg>
+                    <svg width="1" className="relative left-15" height="120%" xmlns="http://www.w3.org/2000/svg">
+                      <line x1="1" y1="0" x2="1" y2="100" stroke="black" strokeWidth="2" />
+                    </svg>
+                    <button
+                      className="h-fit w-fit p-3 bg-white rounded-full relative left-15 -top-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(idx);
+                        navigate(`/notebook/${notebook._id}`);
+                      }}
+                    >
+                      <FiArrowRight size={20} />
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
 
-                {/* Divider + Arrow Button */}
-                <div className="flex flex-col items-center text-black">
-                  <svg width="1" className="relative left-15" height="120%" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="1" y1="0" x2="1" y2="100" stroke="black" strokeWidth="2" />
-                  </svg>
-                  <svg width="1" className="relative left-15" height="120%" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="1" y1="0" x2="1" y2="100" stroke="black" strokeWidth="2" />
-                  </svg>
-                  <button
-                    className="h-fit w-fit p-3 bg-white rounded-full relative left-15 -top-1"
-                    onClick={(e) => {
-                      e.stopPropagation(); // prevent parent click
-                      setSelected(idx);
-                      navigate(`/notebook/${notebook._id}`); // use clicked notebook directly
-                    }}
-                  >
-                    <FiArrowRight size={20} />
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
