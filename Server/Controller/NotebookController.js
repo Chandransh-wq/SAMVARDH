@@ -105,7 +105,13 @@ export const createNewTopic = async (req, res) => {
     }
 
     // Create the new topic
-    const newTopic = { title, description, color, importance, content: [] };
+    const newTopic = subject.topics.create({
+      title,
+      description,
+      color,
+      importance,
+      content: []
+    });
     subject.topics.push(newTopic);
 
     // Save the notebook
@@ -113,7 +119,16 @@ export const createNewTopic = async (req, res) => {
 
     res.status(201).json({
       message: "Topic created successfully",
-      topic: newTopic
+      topic: {
+        _id: newTopic._id,
+        title: newTopic.title,
+        description: newTopic.description,
+        color: newTopic.color,
+        importance: newTopic.importance,
+        content: newTopic.content,
+        createdAt: newTopic.createdAt,
+        editedAt: newTopic.editedAt
+      }
     });
 
   } catch (error) {
@@ -131,8 +146,59 @@ export const createNewPage = async (req, res) => {
     const userId = req.user._id;
     const { page, pageContent, tags } = req.body;
 
+    if (!page || !pageContent) {
+      return res.status(400).json({ message: "Page and Page-Content are required" });
+    }
+
+    const notebook = await Notebook.findOne({ _id: notebookId, userId });
+    if (!notebook) return res.status(404).json({ message: "Notebook not found" });
+
+    const subject = notebook.subjects.find(sub => sub._id.toString() === subjectId);
+    if (!subject) return res.status(404).json({ message: "Subject not found" });
+
+    const topic = subject.topics.find(t => t._id.toString() === topicId);
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
+
+    // Create new subdocument properly so Mongoose sets _id and defaults
+    const newContent = topic.content.create({ 
+      page, 
+      pageContent, 
+      tags: tags || [] 
+    });
+    topic.content.push(newContent);
+
+    await notebook.save();
+
+    // Return a consistent shape for frontend
+    res.status(201).json({
+      message: "Page added successfully",
+      page: {
+        _id: newContent._id,
+        page: newContent.page,
+        pageContent: newContent.pageContent,
+        tags: newContent.tags,
+        createdAt: newContent.createdAt,
+        editedAt: newContent.editedAt
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error occurred while creating page",
+      error: error.message
+    });
+  }
+};
+
+export const updatePage = async(req, res) => {
+  try {
+    const { notebookId, subjectId, topicId, pageId } = req.params;
+    const userId = req.user._id;
+    const { pageTitle, pageContent } = req.body;
+
     // Validate required fields
-    if (!page || !pageContent ) {
+    if (!pageTitle || !pageContent ) {
       return res.status(400).json({ message: "Page and Page-Content are required" });
     }
 
@@ -155,18 +221,17 @@ export const createNewPage = async (req, res) => {
       return res.status(404).json({ message: "Topic not found" })
     }
 
-    const newContent = {
-      page,
-      pageContent,
-      tags: tags,
+    const content = topic.content.find(c => c.id === pageId)
+    if(!content) {
+      return res.status(404).json({ message: "Content not found" })
     }
-    topic.content.push(newContent)
+
+
+    content.page = pageTitle
+    content.pageContent = pageContent
     await notebook.save();
 
-    res.status(201).json({
-      message: "Page added successfully",
-      page: newContent
-    });
+    res.status(200).json({ messaage: "Test successful", notebook })
 
   } catch (error) {
     console.error(error);
@@ -175,6 +240,6 @@ export const createNewPage = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 export default CreateNewNotebook;

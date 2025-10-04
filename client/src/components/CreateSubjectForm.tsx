@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { createSubject } from "../sources/notebookServices";
 import ImportanceSlider from "./ImportanceSlider";
+import type { Subject } from "../assets/types";
 
 interface CreateNotebookFormProps {
   darkMode: boolean;
   setOpen: (open: boolean) => void;
   id: string;
+  onCreated?: (subject: Subject) => void; // ✅ Add this callback
 }
 
 interface NewSubject {
@@ -24,7 +26,7 @@ const TAGS = [
   "Communication", "Language", "Other"
 ];
 
-const CreateSubjectForm: React.FC<CreateNotebookFormProps> = ({ darkMode, id, setOpen }) => {
+const CreateSubjectForm: React.FC<CreateNotebookFormProps> = ({ darkMode, id, setOpen, onCreated }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [importance, setImportance] = useState(1);

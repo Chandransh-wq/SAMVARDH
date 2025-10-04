@@ -1,26 +1,62 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import React, { useRef, useEffect } from 'react';
 
 interface ContentProps {
   darkMode: boolean;
   text: string;
+  setContent: (content: string) => void;
+  isSaved?: boolean;
 }
 
-const Content: React.FC<ContentProps> = ({ darkMode, text }) => {
+const Content: React.FC<ContentProps> = ({ darkMode, text, setContent }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Auto-focus editor on mount
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.focus();
+    }
+  }, []);
+
+  // Update innerText when `text` changes without breaking cursor
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const selection = window.getSelection();
+    let cursorPos = 0;
+
+    // Safe check for a selection range
+    if (selection && selection.rangeCount > 0) {
+      cursorPos = selection.getRangeAt(0).startOffset;
+    }
+
+    if (ref.current.innerText !== text) {
+      ref.current.innerText = text;
+
+      // Restore cursor safely
+      const range = document.createRange();
+      const node = ref.current.firstChild || ref.current;
+      range.setStart(node, Math.min(cursorPos, node.textContent?.length ?? 0));
+      range.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }, [text]);
+
+  const handleInput = () => {
+    if (ref.current) setContent(ref.current.innerText);
+  };
+
   return (
-    <div className={`prose max-w-none ${darkMode ? 'prose-invert text-gray-100' : 'text-gray-800'}`}>
-<ReactMarkdown
-  remarkPlugins={[remarkGfm]}
-  components={{
-    h1: ({node, ...props}) => <h1 className="text-4xl font-bold my-4" {...props} />,
-    h2: ({node, ...props}) => <h2 className="text-3xl font-semibold my-3" {...props} />,
-    li: ({node, ...props}) => <li className="ml-6 list-disc" {...props} />
-  }}
->
-  {text}
-</ReactMarkdown>
-    </div>
+    <div
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onInput={handleInput}
+      className={`h-full w-full p-4 outline-none overflow-auto resize-none ${
+        darkMode ? 'bg-zinc-800 text-gray-100' : 'bg-white text-gray-800'
+      }`}
+      style={{ whiteSpace: 'pre-wrap' }}
+    />
   );
 };
 

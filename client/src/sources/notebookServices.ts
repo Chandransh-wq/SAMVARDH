@@ -2,13 +2,16 @@
 import type { Subject, Topic } from '../assets/types';
 import api from './api';
 
-// Minimal payloads for creation
+// ------------------ Payload Types ------------------
+
+// Payload for creating a page
 export interface CreatePagePayload {
   page: string;
   pageContent: string;
   tags?: string[];
 }
 
+// Page / Content returned from backend
 export interface Content {
   _id: string;
   page: string;
@@ -18,27 +21,27 @@ export interface Content {
   tags: string[];
 }
 
-export interface TopicType {
-  _id: string;
-  title: string;
-  color: string;
-  importance: number;
-  description: string;
-  dueDate: string;
-  content: Content[];
-}
-
-export interface SubjectType {
-  _id: string;
+// Payload for creating a topic (no _id required)
+export interface NewTopicPayload {
   title: string;
   description: string;
-  color: string;
-  createdAt: string;
   importance: number;
-  tags: string[];
-  topics?: TopicType[];
+  color: string;
+  content?: Content[];
 }
 
+// Payload for creating a subject (no _id required)
+export interface NewSubjectPayload {
+  title: string;
+  description: string;
+  color: string;
+  createdAt?: string;
+  importance?: number;
+  tags?: string[];
+  topics?: Topic[];
+}
+
+// Notebook type
 export interface Notebook {
   _id: string;
   title: string;
@@ -49,7 +52,7 @@ export interface Notebook {
   favourite: boolean;
   color: string;
   userId: string;
-  subjects?: SubjectType[];
+  subjects?: Subject[];
 }
 
 // ---------------- GET ----------------
@@ -67,7 +70,7 @@ export const getNotebooks = async (): Promise<Notebook[]> => {
 };
 
 // ---------------- CREATE ----------------
-export const createNotebook = async (data: Notebook): Promise<Notebook> => {
+export const createNotebook = async (data: Omit<Notebook, "_id">): Promise<Notebook> => {
   const token = localStorage.getItem("token") || "";
   const res = await api.post<Notebook>("/notebook/create", data, {
     headers: { Authorization: `Bearer ${token}` },
@@ -76,7 +79,7 @@ export const createNotebook = async (data: Notebook): Promise<Notebook> => {
 };
 
 export const createSubject = async (
-  data: Subject,
+  data: NewSubjectPayload,
   notebookId: string
 ): Promise<Subject> => {
   const token = localStorage.getItem("token") || "";
@@ -87,11 +90,16 @@ export const createSubject = async (
 };
 
 export const createTopic = async (
-  data: Topic,
+  data: NewTopicPayload,
   notebookId: string,
   subjectId: string
 ): Promise<Topic> => {
+  if (!notebookId || !subjectId ) {
+    throw new Error("Missing notebookId, or subjectId");
+  }
+
   const token = localStorage.getItem("token") || "";
+   
   const res = await api.post<Topic>(
     `/notebook/${notebookId}/subject/${subjectId}/topic`,
     data,
@@ -111,12 +119,8 @@ export const createPage = async (
   }
 
   const token = localStorage.getItem("token") || "";
-  console.log("📡 Sending request:", {
-    url: `/notebook/${notebookId}/subject/${subjectId}/topic/${topicId}/page`,
-    body: data,
-  });
 
-  const res = await api.post<Content>(
+  const res = await api.post<{ message: string; page: Content }>(
     `/notebook/${notebookId}/subject/${subjectId}/topic/${topicId}/page`,
     data,
     {
@@ -127,5 +131,5 @@ export const createPage = async (
     }
   );
 
-  return res.data;
+  return res.data.page;
 };

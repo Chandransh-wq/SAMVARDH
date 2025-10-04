@@ -21,7 +21,7 @@ export const registerUser = async (req, res) => {
 
     // --- Generate JWT Token ---
     const token = jwt.sign(
-      { userId: User._id },
+      { userId: newUser._id },
       process.env.JWT_SECRET,
       { expiresIn: "10h" } // user stays logged in for 10 hours
     );

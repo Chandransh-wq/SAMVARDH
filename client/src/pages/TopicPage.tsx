@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// File: TopicPage.tsx
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { FiCalendar, FiEdit, FiPlus, FiSearch } from 'react-icons/fi';
@@ -15,6 +16,7 @@ interface TopicProps {
 }
 
 interface PageContent {
+  _id: string;
   page: string;
   pageContent: string;
   tags: string[];
@@ -24,10 +26,12 @@ interface PageContent {
 
 const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
   const { id } = useParams<{ id: string }>();
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState<number>(-1);
   const [notebookData, setNotebook] = useState<Notebook[]>([]);
   const [topicContent, setTopicContent] = useState<PageContent[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [content, setContent] = useState<string>("");
+  const [isSaved, setIsSaved] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,35 +41,67 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
     fetchData();
   }, []);
 
-  let topic: Topic | undefined;
-  let subjectId = "";
-  let notebookId = "";
+  const { topic, subjectId, notebookId } = useMemo(() => {
+    let topic: Topic | undefined;
+    let subjectId = "";
+    let notebookId = "";
 
-  for (const nb of notebookData) {
-    for (const sub of nb.subjects ?? []) {
-      for (const t of sub.topics ?? []) {
-        if (t._id === id) {
-          topic = t;
-          subjectId = sub._id ?? "";
-          notebookId = nb._id ?? "";
-          break;
+    for (const nb of notebookData) {
+      for (const sub of nb.subjects ?? []) {
+        for (const t of sub.topics ?? []) {
+          if (t._id === id) {
+            topic = t;
+            subjectId = sub._id ?? "";
+            notebookId = nb._id ?? "";
+            break;
+          }
         }
+        if (topic) break;
       }
+      if (topic) break;
     }
-  }
+
+    return { topic, subjectId, notebookId };
+  }, [notebookData, id]);
+
+  // --------------------------
+  // FIXED: Simple extractor
+  // --------------------------
+  const extractCreatedContent = (payload: any): PageContent | null => {
+    if (!payload) return null;
+
+    return {
+      _id: payload._id ?? payload.id ?? Math.random().toString(36).slice(2),
+      page: payload.page ?? "Untitled",
+      pageContent: payload.pageContent ?? "",
+      tags: Array.isArray(payload.tags) ? payload.tags : [],
+      createdAt: payload.createdAt ?? new Date().toISOString(),
+      editedAt: payload.editedAt ?? new Date().toISOString(),
+    };
+  };
 
   // Normalize initial topic content
   useEffect(() => {
-    const normalized = (topic?.content ?? []).map(c => ({
-      page: typeof c.page === "string" ? c.page : (c.page),
-      pageContent: typeof c.pageContent === "string" ? c.pageContent : "",
+    const normalized = (topic?.content ?? []).map((c: any) => ({
+      _id: c._id ?? c.id ?? Math.random().toString(36).slice(2),
+      page: typeof c.page === "string" ? c.page : (c.page?.title ?? "Untitled"),
+      pageContent: typeof c.pageContent === "string" ? c.pageContent : (c.content ?? ""),
       tags: Array.isArray(c.tags) ? c.tags : [],
       createdAt: c.createdAt ?? new Date().toISOString(),
-      editedAt: c.editedAt ?? new Date().toISOString(),
+      editedAt: c.editedAt ?? c.updatedAt ?? new Date().toISOString(),
     }));
     setTopicContent(normalized);
-    setSelected(0);
+    setSelected(normalized.length > 0 ? 0 : -1);
   }, [topic]);
+
+  // Sync selected page content safely
+  useEffect(() => {
+    if (selected >= 0 && selected < topicContent.length) {
+      setContent(topicContent[selected].pageContent ?? "");
+    } else {
+      setContent("");
+    }
+  }, [selected, topicContent]);
 
   const option1: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric" };
   const option2: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", year: "numeric", day: "numeric" };
@@ -86,22 +122,22 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
             topicId={topic?._id ?? ""}
             setOpen={setShowForm}
             darkMode={darkMode}
-            onContentCreated={(newContent) => {
-              const safeContent: PageContent = {
-                page: typeof newContent.page === "string" ? newContent.page : (newContent.page?.title ?? "Untitled"),
-                pageContent: typeof newContent.pageContent === "string" ? newContent.pageContent : "",
-                tags: Array.isArray(newContent.tags) ? newContent.tags : [],
-                createdAt: newContent.createdAt ?? new Date().toISOString(),
-                editedAt: newContent.editedAt ?? new Date().toISOString(),
-              };
-              setTopicContent(prev => [safeContent, ...prev]);
+            onContentCreated={(serverPayload) => {
+              console.log("Server payload received:", serverPayload);
+              const created = extractCreatedContent(serverPayload);
+              console.log("Parsed content object:", created);
+              if (!created) return;
+
+              setTopicContent(prev => [created, ...prev]);
               setSelected(0);
+              setContent(created.pageContent ?? "");
+              setShowForm(false);
             }}
           />
         </div>
       )}
 
-      {/* Left Side */}
+      {/* Left Sidebar */}
       <div className={`w-1/4 text-lg ${darkMode ? "bg-zinc-950" : "bg-white"} rounded-3xl h-[99%] overflow-scroll my-scrollbar shadow-md p-6 text-left`}>
         <span className='text-xl tracking-wider' style={{ fontWeight: 500 }}>
           {topic?.title ?? "Topic not found"}
@@ -120,46 +156,40 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
           </button>
         </div>
         <div className='flex flex-col gap-6'>
-          {topicContent.map((content, idx) => (
+          {topicContent.map((page) => (
             <div
-              key={idx}
-              className={`p-5 border rounded-3xl ${darkMode ? "border-zinc-800 shadow-md shadow-white/10" : "border-zinc-400 shadow-md"} pt-4 pl-4 ${idx === selected ? "ring-2 ring-blue-500" : ""}`}
-              onClick={() => setSelected(idx)}
+              key={page._id}
+              className={`p-5 border rounded-3xl ${darkMode ? "border-zinc-800 shadow-md shadow-white/10" : "border-zinc-400 shadow-md"} pt-4 pl-4 ${page._id === topicContent[selected]?._id ? "ring-2 ring-blue-500" : ""}`}
+              onClick={() => {
+                const idx = topicContent.findIndex(p => p._id === page._id);
+                if (idx !== -1) setSelected(idx);
+              }}
             >
               <div className='flex gap-4 items-center'>
                 <span className='flex items-center gap-2 py-1'>
                   <FiCalendar />&nbsp;
-                  {today.toLocaleDateString("en-UK", option2) !== new Date(content.createdAt).toLocaleDateString("en-UK", option2)
-                    ? new Date(content.createdAt).toLocaleDateString("en-UK", option1)
+                  {today.toLocaleDateString("en-UK", option2) !== new Date(page.createdAt).toLocaleDateString("en-UK", option2)
+                    ? new Date(page.createdAt).toLocaleDateString("en-UK", option1)
                     : "Today"}
                 </span>
                 <div className='flex gap-2' style={{ fontSize: "16px" }}>
-                  {content.tags?.[0] && (
+                  {page.tags?.[0] && (
                     <span className={`h-fit w-fit py-1 text-black px-6 rounded-full ${getRandomColor()}`}>
-                      {content.tags[0]}
+                      {page.tags[0]}
                     </span>
                   )}
-                  {content.tags && content.tags.length > 1 && (
+                  {page.tags && page.tags.length > 1 && (
                     <span className={`h-fit w-fit py-1 px-2 border-[0.2px] ${darkMode ? "border-zinc-900" : "border-zinc-400"} rounded-full`}>
-                      +{content.tags.length - 1}
+                      +{page.tags.length - 1}
                     </span>
                   )}
                 </div>
               </div>
               <div className='flex flex-col gap-2'>
-                <span className='text-lg font-bold tracking-wide mt-2'>{content.page}</span>
-                {content.pageContent && (
+                <span className='text-lg font-bold tracking-wide mt-2'>{page.page}</span>
+                {page.pageContent && (
                   <span className='w-[calc(100%-1rem)]'>
-                    <Content
-                      darkMode={darkMode}
-                      text={content.pageContent.length > 100
-                        ? content.pageContent.replace(/^#{1,6}\s.*$/gm, "")
-                          .replace(/[^a-zA-Z0-9 ]/g, "")
-                          .replace(/\s+/g, " ")
-                          .substring(0, 100) + "..."
-                        : content.pageContent
-                      }
-                    />
+                    {page.pageContent}
                   </span>
                 )}
               </div>
@@ -168,38 +198,49 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
         </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Content Area */}
       <div className={`w-3/4 h-[99%] ${darkMode ? "bg-zinc-950" : "bg-white"} rounded-3xl shadow-md p-7 text-left pb-12`}>
-        <div className='h-1/5'>
-          <div className='flex items-center justify-between'>
-            <span className='tracking-wide' style={{ fontWeight: 500, fontSize: "1.9rem" }}>
-              {topicContent[selected]?.page ?? ""}
-            </span>
-            <div className='flex items-center gap-10'>
-              <span className='flex items-center gap-2'>
-                <FiEdit /> Edited: {topicContent[selected]?.editedAt ? new Date(topicContent[selected].editedAt).toLocaleDateString("en-UK", option1) : "N/A"}
-              </span>
-              <div className='flex gap-3'>
-                <div className={`w-fit h-fit p-2 ${darkMode ? "bg-zinc-800" : "bg-zinc-100"} rounded-full shadow-md`}>
-                  <FiSearch />
-                </div>
-                <div className={`w-fit h-fit p-2 ${darkMode ? "bg-zinc-800" : "bg-zinc-100"} rounded-full shadow-md`}>
-                  <IoIosArrowDown />
+        {selected >= 0 && selected < topicContent.length ? (
+          <>
+            <div className='h-1/5'>
+              <div className='flex items-center justify-between'>
+                <span className='tracking-wide' style={{ fontWeight: 500, fontSize: "1.9rem" }}>
+                  {topicContent[selected].page}
+                </span>
+                <div className='flex items-center gap-10'>
+                  <span className='flex items-center gap-2'>
+                    <FiEdit /> Edited: {topicContent[selected].editedAt ? new Date(topicContent[selected].editedAt).toLocaleDateString("en-UK", option1) : "N/A"}
+                  </span>
+                  <div className='flex gap-3'>
+                    <div className={`w-fit h-fit p-2 ${darkMode ? "bg-zinc-800" : "bg-zinc-100"} rounded-full shadow-md`}>
+                      <FiSearch />
+                    </div>
+                    <div className={`w-fit h-fit p-2 ${darkMode ? "bg-zinc-800" : "bg-zinc-100"} rounded-full shadow-md`}>
+                      <IoIosArrowDown />
+                    </div>
+                  </div>
                 </div>
               </div>
+              <span className='flex items-center gap-2'>
+                <FiCalendar /> Created At: {topicContent[selected].createdAt ? new Date(topicContent[selected].createdAt).toLocaleDateString("en-UK", option1) : ""}
+              </span>
+              <ToolBar darkMode={darkMode} setIsSaved={setIsSaved} isSaved={isSaved} />
             </div>
-          </div>
-          <span className='flex items-center gap-2'>
-            <FiCalendar /> Created At: {topicContent[selected]?.createdAt ? new Date(topicContent[selected].createdAt).toLocaleDateString("en-UK", option1) : ""}
-          </span>
-          <ToolBar darkMode={darkMode} />
-        </div>
 
-        <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-zinc-50"} shadow-md p-7 overflow-scroll my-scrollbar`}>
-          {topicContent[selected]?.pageContent
-            ? <Content darkMode={darkMode} text={topicContent[selected].pageContent} />
-            : <div>No Content is present for the page selected</div>}
-        </div>
+            <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-zinc-50"} shadow-md p-7 overflow-scroll my-scrollbar pb-0`}>
+              <Content
+                darkMode={darkMode}
+                text={content}
+                setContent={setContent}
+                isSaved={isSaved}
+              />
+            </div>
+          </>
+        ) : (
+          <div className='flex items-center justify-center h-full text-xl'>
+            No pages available. Create one to get started.
+          </div>
+        )}
       </div>
     </motion.div>
   );

@@ -37,6 +37,18 @@ export interface Topics {
 
 // Subject inside a notebook
 export interface Subject {
+  _id: string;
+  title: string;
+  description: string;
+  color: string;
+  createdAt?: string;
+  importance?: number;
+  tags?: string[];
+  topics?: Topic[];
+}
+
+export interface Subjects {
+  _id: string;
   title: string;
   description: string;
   color: string;

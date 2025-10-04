@@ -12,8 +12,8 @@ interface CreateContentFormProps {
 }
 
 export interface NewPage {
-  page: string | { title?: string };
-  pageContent?: string | { text?: string };
+  page: string;
+  pageContent: string;
   createdAt?: string;
   editedAt?: string;
   tags?: string[];
@@ -51,29 +51,26 @@ const CreateContentForm: React.FC<CreateContentFormProps> = ({
     try {
       const newPage: NewPage = {
         page: page.trim(),
-        pageContent: pageContent ? pageContent.trim() : "Write Something",
+        pageContent: pageContent.trim(),
         tags: selectedTags,
         createdAt: new Date().toISOString(),
         editedAt: new Date().toISOString(),
       };
 
+      // Call backend
       const created = await createPage(newPage, notebookId, subjectId, topicId);
+
       toast.success("Page created successfully");
 
       if (onContentCreated) {
-        // Normalize page and content to string to prevent [Object Object]
+        // Backend returns the page directly, so no need for extra checks
         const safeContent: NewPage = {
-          page: typeof created.page === "string" ? created.page
-                : created.page?.title ? created.page.title
-                : "Untitled",
-          pageContent: typeof created.pageContent === "string" ? created.pageContent
-                      : created.pageContent?.text ? created.pageContent.text
-                      : "",
+          page: created.page,
+          pageContent: created.pageContent,
           tags: Array.isArray(created.tags) ? created.tags : [],
           createdAt: created.createdAt ?? new Date().toISOString(),
           editedAt: created.editedAt ?? new Date().toISOString(),
         };
-
         onContentCreated(safeContent);
       }
 
@@ -82,6 +79,7 @@ const CreateContentForm: React.FC<CreateContentFormProps> = ({
       setPageContent("");
       setSelectedTags([]);
       setOpen(false);
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to create page. See console for details.");

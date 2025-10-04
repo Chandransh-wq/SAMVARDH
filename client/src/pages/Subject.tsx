@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getComputedData, hexToRgba } from '../assets/functions';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -6,9 +6,9 @@ import { motion } from 'framer-motion';
 import { FiArrowRight, FiCalendar, FiClock, FiPlus, FiStar } from 'react-icons/fi';
 import { basic } from '../assets/Illustraitions/basics';
 import Carsouls from '../components/DashBoard/Carsouls';
-import type { Notebook, subject, topic } from '../sources/notebookServices';
 import CreateSubjectForm from '../components/CreateSubjectForm';
 import CreateTopicForm from '../components/CreateTopicForm';
+import type { Notebook, Subjects, Topic } from '../assets/types';
 
 interface SubjectProps {
   darkMode: boolean;
@@ -21,13 +21,14 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
   const [notebookData, setNotebook] = useState<Notebook[]>([]);
   const [selected, setSelected] = useState(0);
   const [carsoulSelected, setCarsoulSelected] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [showFormTopic, setShowFormTopic] = useState(false);
+  const [refresh, setRefresh] = useState(0); // dummy state to force re-render
 
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [monthWindowStart, setMonthWindowStart] = useState(Math.max(0, today.getMonth() - 2));
-  const [showForm, setShowForm] = useState(false)
-  const [showFormTopic, setShowFormTopic] = useState(false)
   const dayContainerRef = useRef<HTMLDivElement>(null);
 
   const months = [
@@ -56,10 +57,10 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
     }
   }, [selectedDay, selectedMonth]);
 
-  if (!notebookData.length) return <div>Loading notebooks...</div>;
+  const notebook = useMemo(() => notebookData.find(nb => nb._id === id), [notebookData, id]);
+  const selectedSubject: Subjects | undefined = useMemo(() => notebook?.subjects?.[selected], [notebook, selected, notebook?.subjects, refresh]);
 
-  const notebook = notebookData.find(nb => nb._id === id);
-  const selectedSubject: subject | undefined = notebook?.subjects?.[selected];
+  if (!notebookData.length) return <div>Loading notebooks...</div>;
 
   const handlePrevMonth = () => { 
     if (monthWindowStart > 0) {
@@ -78,25 +79,23 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
   const options2: Intl.DateTimeFormatOptions = { weekday: "short" };
   const options3: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
   const options4: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  
 
   const CarsoulArray = [
     { name: "By Due Day", number: 1 },
     { name: "See All", number: 2 },
   ];
 
-  // --- Topics filtering logic moved outside JSX and typed properly ---
-  let filteredTopics: topic[] = [];
+  let filteredTopics: Topic[] = [];
   if (selectedSubject?.topics) {
     const selectedDate = new Date(today.getFullYear(), selectedMonth, selectedDay);
     if (carsoulSelected === 1) {
-      filteredTopics = selectedSubject.topics.filter((topic: topic) => {
+      filteredTopics = selectedSubject.topics.filter((topic: Topic) => {
         if (!topic.dueDate) return true;
         const topicDate = new Date(topic.dueDate);
         return topicDate >= selectedDate;
       });
     } else {
-      filteredTopics = [...selectedSubject.topics]; // See All
+      filteredTopics = [...selectedSubject.topics];
     }
   }
 
@@ -108,27 +107,69 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
       className={`${darkMode ? 'primary-dark' : 'primary-light'} flex justify-evenly h-[92vh] md:w-[calc(100%)] absolute md:top-[4.5rem] pt-5 top-0 left-0 w-screen pl-16 gap-5`}
     >
       {/* LEFT PANEL */}
-      {showForm &&
+      {showForm && notebook && (
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
           <CreateSubjectForm 
             setOpen={setShowForm}
-            id={id ? id : ""}
-            darkMode={darkMode} 
+            id={id ?? ""}
+            darkMode={darkMode}
+            onCreated={(newSubject: Subjects) => {
+              setNotebook(prev => {
+                const updatedNotebooks = prev.map(nb => {
+                  if (nb._id === id) {
+                    return {
+                      ...nb,
+                      subjects: [...(nb.subjects ?? []), newSubject]
+                    };
+                  }
+                  return nb;
+                });
+                return updatedNotebooks;
+              });
+              setSelected(notebook?.subjects?.length ?? 0);
+              setRefresh(prev => prev + 1); // force re-render
+            }}
           />
         </div>
-      }
-      {showFormTopic &&
+      )}
+
+      {showFormTopic && notebook && (
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
           <CreateTopicForm
-            subjectId={notebook?.subjects?.[selected]._id ? notebook?.subjects?.[selected]._id : ""}
+            subjectId={notebook?.subjects?.[selected]?._id ?? ""}
             setOpen={setShowFormTopic}
-            id={id ? id : ""}
-            darkMode={darkMode} 
+            id={id ?? ""}
+            darkMode={darkMode}
+            onCreated={(newTopic: Topic) => {
+              if (!newTopic) return;
+              const createdTopic = {
+                ...newTopic,
+                _id: newTopic._id ?? Math.random().toString(36).slice(2),
+                content: Array.isArray(newTopic.content) ? newTopic.content : [],
+              };
+              
+              setNotebook(prev => {
+                return prev.map(nb => {
+                  if (nb._id === id) {
+                    const updatedSubjects = nb.subjects?.map((subj, idx) => {
+                      if (idx === selected) {
+                        return { ...subj, topics: [...(subj.topics ?? []), createdTopic] };
+                      }
+                      return subj;
+                    }) ?? [];
+                    return { ...nb, subjects: updatedSubjects };
+                  }
+                  return nb;
+                });
+              });
+              setRefresh(prev => prev + 1); // force re-render
+            }}
           />
         </div>
-      }
+      )}
+
+      {/* Notebook & Subject List */}
       <div className="w-1/2 text-left pl-12">
-        {/* Header */}
         <div>
           <span className='text-3xl tracking-wider font-semibold flex items-center gap-3'>
             <div className='h-5 w-5 rounded-full' style={{ backgroundColor: darkMode ? notebook?.color : hexToRgba(notebook?.color ?? "#ccc", 0.7) }}></div>
@@ -137,33 +178,33 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
           <span className='flex items-center gap-5 text-md text-zinc-500 mt-2'>
             <span className='flex items-center gap-2'>
               <FiCalendar />
-              {notebook ? new Date(notebook.createdAt).toLocaleDateString("en-UK", options1) : "-"}
+              {notebook ? new Date(notebook.createdAt ? notebook.createdAt : "").toLocaleDateString("en-UK", options1) : "-"}
             </span>
             <span className='flex items-center gap-2'>
               <FiClock />
-              {notebook ? new Date(notebook.createdAt).toLocaleDateString("en-UK", options2) : "-"}
+              {notebook ? new Date(notebook.createdAt ? notebook.createdAt : "").toLocaleDateString("en-UK", options2) : "-"}
             </span>
           </span>
         </div>
 
         {/* Subject List */}
         <div className='mt-5'>
-          <div>
-            <div>
-              <button className='flex gap-4 items-center' onClick={()=>setShowForm(true)}>
-                <FiPlus />Create
-              </button>
-            </div>
+          <div className='flex items-center pr-2 justify-between'>
             <span className='text-2xl tracking-wider font-semibold mb-4'>
               Subjects:
             </span>
+            <div>
+              <button className='flex gap-4 items-center bg-orange-500 text-white p-2 px-5 rounded-full relative -top-1 shadow-md' onClick={() => setShowForm(true)}>
+                <FiPlus />Create
+              </button>
+            </div>
           </div>
           <div className='mt-5 w-full flex flex-col gap-15 h-[40rem] my-scrollbar pb-4 px-2 overflow-scroll'>
-            {notebook?.subjects?.map((subject: subject, idx: number) => {
-              const tagKey = subject.tags.find(tag => tag in basic) || "Other";
+            {notebook?.subjects?.map((subject: Subjects, idx: number) => {
+              const tagKey = subject.tags?.find(tag => tag in basic) || "Other";
               return (
                 <div
-                  key={idx}
+                  key={subject._id}
                   className={`flex p-3 rounded-3xl ${darkMode ? "bg-zinc-900" : "bg-white"} shadow-lg gap-5`}
                   onClick={() => setSelected(idx)}
                 >
@@ -179,7 +220,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                     </span>
                     <span className='text-md tracking-wide text-zinc-600 mt-1 mb-3'>{subject.description}</span>
                     <div className='flex gap-4 my-1'>
-                      {subject.tags.map((tag: string, i: number) => (
+                      {subject.tags?.map((tag, i) => (
                         <div key={i} className='bg-blue-100 p-2 px-3 rounded-lg text-black'>{tag}</div>
                       ))}
                     </div>
@@ -198,7 +239,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT PANEL (Topics & Date Wheels) */}
       <motion.div
         className={`w-1/3 relative h-[calc(100%-1rem)] -right-5 p-4 px-6 ${darkMode ? 'bg-zinc-900' : 'bg-white'} rounded-lg shadow-md`}
         initial={{ opacity: 0 }}
@@ -275,15 +316,15 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
           <div className='text-left text-lg tracking-wide font-semibold mb-4'>
             Topics for {selectedSubject?.title || "N/A"}:
           </div>
-            <button className='flex gap-4 items-center bg-orange-500 p-2 px-5 text-white rounded-full' onClick={()=>setShowFormTopic(true)}>
-              <FiPlus />Create
-            </button>
+          <button className='flex gap-4 items-center bg-orange-500 p-2 px-5 text-white rounded-full' onClick={() => setShowFormTopic(true)}>
+            <FiPlus />Create
+          </button>
         </div>
 
         {/* Topics List */}
-        <div className='flex flex-col gap-5'>
+        <div className='flex flex-col gap-5 h-[26rem] pb-4 overflow-scroll my-scrollbar'>
           {filteredTopics.length > 0 ? (
-            filteredTopics.map((topic: topic, idx: number) => (
+            filteredTopics.map((topic: Topic, idx: number) => (
               <div
                 key={topic._id ?? idx}
                 className={`w-full rounded-2xl ${darkMode ? "bg-zinc-950 hover:bg-zinc-900" : "bg-zinc-50 hover:bg-zinc-100"} group p-3 shadow-md flex items-center gap-4 cursor-pointer transition-all duration-200`}
@@ -297,7 +338,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                 </span>
 
                 <div className='flex flex-col text-left text-sm w-full'>
-                  <div className='text-xl w-full  tracking-wider flex items-center justify-between pr-3 font-normal'>
+                  <div className='text-xl w-full tracking-wider flex items-center justify-between pr-3 font-normal'>
                     <span style={{ fontWeight: "2rem" }}>{topic.title}</span>
                     <span className='text-sm mt-3 tracking-wide text-zinc-500 font-semibold relative -top-1'>
                       {topic.dueDate ? new Date(topic.dueDate).toLocaleDateString("en-UK", options4) : "-"}

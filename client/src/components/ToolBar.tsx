@@ -9,14 +9,17 @@ import {
   FaLink,
   FaUndo,
   FaRedo,
+  FaSave,
 } from 'react-icons/fa';
 
 interface ToolBarProps {
   darkMode: boolean;
   onAction?: (action: string) => void; // callback when a button is clicked
+  isSaved: boolean;
+  setIsSaved: (save: boolean) => void;
 }
 
-const ToolBar: React.FC<ToolBarProps> = ({ darkMode, onAction }) => {
+const ToolBar: React.FC<ToolBarProps> = ({ darkMode, onAction, isSaved, setIsSaved }) => {
   const buttons = [
     { icon: <FaBold />, action: 'bold', label: 'Bold' },
     { icon: <FaItalic />, action: 'italic', label: 'Italic' },
@@ -27,10 +30,15 @@ const ToolBar: React.FC<ToolBarProps> = ({ darkMode, onAction }) => {
     { icon: <FaLink />, action: 'link', label: 'Insert Link' },
     { icon: <FaUndo />, action: 'undo', label: 'Undo' },
     { icon: <FaRedo />, action: 'redo', label: 'Redo' },
+    { icon: <FaSave />, action: 'save', label: isSaved ? 'Saved' : 'Save' },
   ];
 
   const handleClick = (action: string) => {
     if (onAction) onAction(action);
+
+    if (action === 'save') {
+      setIsSaved(true);
+    }
   };
 
   return (
@@ -44,9 +52,9 @@ const ToolBar: React.FC<ToolBarProps> = ({ darkMode, onAction }) => {
           key={btn.action}
           onClick={() => handleClick(btn.action)}
           title={btn.label}
-          className={`p-2 rounded hover:bg-zinc-300/30 ${
-            darkMode ? 'hover:bg-zinc-700/50' : ''
-          } transition-colors`}
+          className={`p-2 rounded transition-colors ${
+            darkMode ? 'hover:bg-zinc-700/50' : 'hover:bg-zinc-300/30'
+          }`}
         >
           {btn.icon}
         </button>

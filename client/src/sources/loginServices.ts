@@ -14,6 +14,11 @@ export const loginUser = async (email: string, password: string): Promise<{ user
   return response.data;
 };
 
+export const Ayuhsi = async () => {
+  const response = await api.get("/Ayuhsi")
+  return response.data
+}
+
 // Register
 export const registerUser = async (name: string, email: string, password: string): Promise<{ newUser: string; token: string }> => {
   const response = await api.post("/register", { name, email, password });
