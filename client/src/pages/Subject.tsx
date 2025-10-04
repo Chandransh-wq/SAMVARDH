@@ -46,7 +46,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
       setNotebook(fetchedNotebooks);
     };
     fetchData();
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     const selectedEl = dayContainerRef.current?.querySelector<HTMLButtonElement>('.active-day');
@@ -109,27 +109,34 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
       {/* LEFT PANEL */}
       {showForm && notebook && (
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
-          <CreateSubjectForm 
-            setOpen={setShowForm}
-            id={id ?? ""}
-            darkMode={darkMode}
-            onCreated={(newSubject: Subjects) => {
-              setNotebook(prev => {
-                const updatedNotebooks = prev.map(nb => {
-                  if (nb._id === id) {
-                    return {
-                      ...nb,
-                      subjects: [...(nb.subjects ?? []), newSubject]
-                    };
-                  }
-                  return nb;
-                });
-                return updatedNotebooks;
-              });
-              setSelected(notebook?.subjects?.length ?? 0);
-              setRefresh(prev => prev + 1); // force re-render
-            }}
-          />
+<CreateSubjectForm 
+  setOpen={setShowForm}
+  id={id ?? ""}
+  darkMode={darkMode}
+  onCreated={(newSubject: Subjects) => {
+    if (!newSubject) return;
+
+    // Add subject to notebookData
+    setNotebook(prev => {
+      return prev.map(nb => {
+        if (nb._id === id) {
+          const updatedSubjects = [...(nb.subjects ?? []), newSubject];
+          return { ...nb, subjects: updatedSubjects };
+        }
+        return nb;
+      });
+    });
+
+    // Select the newly created subject
+    setSelected(prev => {
+      const nb = notebookData.find(nb => nb._id === id);
+      return nb ? (nb.subjects?.length ?? 0) : 0;
+    });
+
+    setShowForm(false);
+  }}
+/>
+
         </div>
       )}
 
@@ -163,6 +170,8 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                 });
               });
               setRefresh(prev => prev + 1); // force re-render
+              console.log(refresh)
+              
             }}
           />
         </div>
