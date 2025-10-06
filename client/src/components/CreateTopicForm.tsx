@@ -9,11 +9,12 @@ interface CreateTopicFormProps {
   id: string; // Notebook ID
   subjectId: string; // Subject ID
   onCreated?: (topic: Topic) => void; // callback after creation
+  isVisible?: boolean
 }
 
 const COLORS = ["#F87171","#FBBF24","#34D399","#60A5FA","#A78BFA"];
 
-const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ darkMode, id, setOpen, subjectId, onCreated }) => {
+const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ darkMode, id, setOpen, subjectId, isVisible, onCreated }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [importance, setImportance] = useState(1);

@@ -7,7 +7,7 @@ interface ContentProps {
   isSaved?: boolean;
 }
 
-const Content: React.FC<ContentProps> = ({ darkMode, text, setContent }) => {
+const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   // Auto-focus editor on mount
@@ -46,17 +46,20 @@ const Content: React.FC<ContentProps> = ({ darkMode, text, setContent }) => {
     if (ref.current) setContent(ref.current.innerText);
   };
 
+
   return (
+    <>
     <div
       ref={ref}
       contentEditable
       suppressContentEditableWarning
       onInput={handleInput}
-      className={`h-full w-full p-4 outline-none overflow-auto resize-none ${
-        darkMode ? 'bg-zinc-800 text-gray-100' : 'bg-white text-gray-800'
+      className={`h-full w-full p-4 my-scrollbar outline-none overflow-auto resize-none ${
+        darkMode ? ' text-gray-100' : 'text-gray-800'
       }`}
       style={{ whiteSpace: 'pre-wrap' }}
     />
+    </>
   );
 };
 

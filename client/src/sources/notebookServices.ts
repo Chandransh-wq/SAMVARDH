@@ -11,6 +11,11 @@ export interface CreatePagePayload {
   tags?: string[];
 }
 
+export interface UpdatePagePayload {
+  page?: string;
+  pageContent?: string;
+}
+
 // Page / Content returned from backend
 export interface Content {
   _id: string;
@@ -54,6 +59,7 @@ export interface Notebook {
   userId: string;
   subjects?: Subject[];
 }
+
 
 // ---------------- GET ----------------
 export const getNotebooks = async (): Promise<Notebook[]> => {
@@ -133,3 +139,53 @@ export const createPage = async (
 
   return res.data.page;
 };
+
+export const updateContent = async(
+  data: UpdatePagePayload,
+  notebookId: string,
+  subjectId: string,
+  topicId: string,
+  contentId: String
+) => {
+  
+  const token = localStorage.getItem("token") || "";
+
+  const res = await api.put<{ message: string; page: Content }>(
+    `/notebook/${notebookId}/subject/${subjectId}/topic/${topicId}/page/${contentId}`,
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return res.data.page;
+}
+
+// ---------------- DELETE ----------------
+export const deleteResource = async (
+  notebookId: string,
+  subjectId?: string,
+  topicId?: string,
+  contentId?: string
+): Promise<{ message: string }> => {
+  if (!notebookId) {
+    throw new Error("notebookId is required to delete any resource");
+  }
+
+  const token = localStorage.getItem("token") || "";
+
+  let url = `/notebook/${notebookId}`;
+  if (subjectId) url += `/${subjectId}`;
+  if (topicId) url += `/${topicId}`;
+  if (contentId) url += `/${contentId}`;
+
+  const res = await api.delete<{ message: string }>(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return res.data;
+};
+

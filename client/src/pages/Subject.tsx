@@ -3,12 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getComputedData, hexToRgba } from '../assets/functions';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { FiArrowRight, FiCalendar, FiClock, FiPlus, FiStar } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiClock, FiPlus, FiStar, FiTrash } from 'react-icons/fi';
 import { basic } from '../assets/Illustraitions/basics';
 import Carsouls from '../components/DashBoard/Carsouls';
 import CreateSubjectForm from '../components/CreateSubjectForm';
 import CreateTopicForm from '../components/CreateTopicForm';
 import type { Notebook, Subjects, Topic } from '../assets/types';
+import { toast } from 'sonner';
+import { deleteResource } from '../sources/notebookServices';
 
 interface SubjectProps {
   darkMode: boolean;
@@ -23,7 +25,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
   const [carsoulSelected, setCarsoulSelected] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showFormTopic, setShowFormTopic] = useState(false);
-  const [refresh, setRefresh] = useState(0); // dummy state to force re-render
+  const [refresh, setRefresh] = useState(0);
 
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
@@ -99,6 +101,65 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
     }
   }
 
+  // Delete the selected subject
+  const deleteSubject = async (subjectId?: string) => {
+    if (!notebook || !notebook.subjects) return;
+    const idToDelete = subjectId ?? notebook.subjects[selected]?._id;
+    if (!idToDelete) return;
+
+    try {
+      await deleteResource(notebook._id ?? "", idToDelete)
+      setNotebook(prev =>
+        prev.map(nb => {
+          if (nb._id === notebook._id) {
+            const updatedSubjects = nb.subjects?.filter(sub => sub._id !== idToDelete) ?? [];
+            return { ...nb, subjects: updatedSubjects };
+          }
+          return nb;
+        })
+      );
+      setSelected(prev => Math.max(prev - 1, 0));
+      toast.success("Subject deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete subject");
+    }
+  };
+
+  // Delete a topic from the selected subject
+  const deleteTopic = async (topicId?: string) => {
+    if (!notebook || !notebook.subjects) return;
+    const subject = notebook.subjects[selected];
+    if (!subject || !subject.topics) return;
+
+    const idToDelete = topicId ?? subject.topics[0]?._id;
+    if (!idToDelete) return;
+
+    try {
+      await deleteResource(notebook._id ?? "", subject._id, topicId)
+      setNotebook(prev =>
+        prev.map(nb => {
+          if (nb._id === notebook._id) {
+            const updatedSubjects = nb.subjects?.map((subj, idx) => {
+              if (idx === selected) {
+                const updatedTopics = subj.topics?.filter(t => t._id !== idToDelete) ?? [];
+                return { ...subj, topics: updatedTopics };
+              }
+              return subj;
+            }) ?? [];
+            return { ...nb, subjects: updatedSubjects };
+          }
+          return nb;
+        })
+      );
+      setRefresh(prev => prev + 1);
+      toast.success("Topic deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete topic");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -109,34 +170,17 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
       {/* LEFT PANEL */}
       {showForm && notebook && (
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
-<CreateSubjectForm 
-  setOpen={setShowForm}
-  id={id ?? ""}
-  darkMode={darkMode}
-  onCreated={(newSubject: Subjects) => {
-    if (!newSubject) return;
-
-    // Add subject to notebookData
-    setNotebook(prev => {
-      return prev.map(nb => {
-        if (nb._id === id) {
-          const updatedSubjects = [...(nb.subjects ?? []), newSubject];
-          return { ...nb, subjects: updatedSubjects };
-        }
-        return nb;
-      });
-    });
-
-    // Select the newly created subject
-    setSelected(prev => {
-      const nb = notebookData.find(nb => nb._id === id);
-      return nb ? (nb.subjects?.length ?? 0) : 0;
-    });
-
-    setShowForm(false);
-  }}
-/>
-
+          <CreateSubjectForm 
+            setOpen={setShowForm}
+            id={id ?? ""}
+            darkMode={darkMode}
+            onCreated={(newSubject: Subjects) => {
+              if (!newSubject) return;
+              setNotebook(prev => prev.map(nb => nb._id === id ? { ...nb, subjects: [...(nb.subjects ?? []), newSubject] } : nb));
+              setSelected(prev => (notebook?.subjects?.length ?? 0));
+              setShowForm(false);
+            }}
+          />
         </div>
       )}
 
@@ -149,29 +193,14 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
             darkMode={darkMode}
             onCreated={(newTopic: Topic) => {
               if (!newTopic) return;
-              const createdTopic = {
-                ...newTopic,
-                _id: newTopic._id ?? Math.random().toString(36).slice(2),
-                content: Array.isArray(newTopic.content) ? newTopic.content : [],
-              };
-              
-              setNotebook(prev => {
-                return prev.map(nb => {
-                  if (nb._id === id) {
-                    const updatedSubjects = nb.subjects?.map((subj, idx) => {
-                      if (idx === selected) {
-                        return { ...subj, topics: [...(subj.topics ?? []), createdTopic] };
-                      }
-                      return subj;
-                    }) ?? [];
-                    return { ...nb, subjects: updatedSubjects };
-                  }
-                  return nb;
-                });
-              });
-              setRefresh(prev => prev + 1); // force re-render
-              console.log(refresh)
-              
+              const createdTopic = { ...newTopic, _id: newTopic._id ?? Math.random().toString(36).slice(2), content: Array.isArray(newTopic.content) ? newTopic.content : [] };
+              setNotebook(prev =>
+                prev.map(nb => nb._id === id ? {
+                  ...nb,
+                  subjects: nb.subjects?.map((subj, idx) => idx === selected ? { ...subj, topics: [...(subj.topics ?? []), createdTopic] } : subj) ?? []
+                } : nb)
+              );
+              setRefresh(prev => prev + 1);
             }}
           />
         </div>
@@ -199,16 +228,14 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
         {/* Subject List */}
         <div className='mt-5'>
           <div className='flex items-center pr-2 justify-between'>
-            <span className='text-2xl tracking-wider font-semibold mb-4'>
-              Subjects:
-            </span>
+            <span className='text-2xl tracking-wider font-semibold mb-4'>Subjects:</span>
             <div>
               <button className='flex gap-4 items-center bg-orange-500 text-white p-2 px-5 rounded-full relative -top-1 shadow-md' onClick={() => setShowForm(true)}>
                 <FiPlus />Create
               </button>
             </div>
           </div>
-          <div className='mt-5 w-full flex flex-col gap-15 h-[40rem] my-scrollbar pb-4 px-2 overflow-scroll'>
+          <div className='mt-5 w-full flex flex-col gap-15 h-[40rem] my-scrollbar pb-4 overflow-scroll'>
             {notebook?.subjects?.map((subject: Subjects, idx: number) => {
               const tagKey = subject.tags?.find(tag => tag in basic) || "Other";
               return (
@@ -233,12 +260,18 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                         <div key={i} className='bg-blue-100 p-2 px-3 rounded-lg text-black'>{tag}</div>
                       ))}
                     </div>
-                    <div className='flex items-center justify-between pr-6'>
+                    <div className='flex items-center justify-between pr-6 mt-auto mb-4'>
                       <span className='mt-3'>Created At :&nbsp;
                         <span className='font-semibold text-lg'>
                           {subject.createdAt ? new Date(subject.createdAt).toLocaleDateString("en-UK", options3) : "-"}
                         </span>
                       </span>
+                      <div 
+                        className='h-fit w-fit p-2 rounded-xl bg-red-100 hover:scale-105 cursor-pointer transition-all duration-200'
+                        onClick={(e) => { e.stopPropagation(); deleteSubject(); }}
+                      >
+                        <FiTrash stroke="red" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -333,42 +366,58 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
         {/* Topics List */}
         <div className='flex flex-col gap-5 h-[26rem] pb-4 overflow-scroll my-scrollbar'>
           {filteredTopics.length > 0 ? (
-            filteredTopics.map((topic: Topic, idx: number) => (
-              <div
-                key={topic._id ?? idx}
-                className={`w-full rounded-2xl ${darkMode ? "bg-zinc-950 hover:bg-zinc-900" : "bg-zinc-50 hover:bg-zinc-100"} group p-3 shadow-md flex items-center gap-4 cursor-pointer transition-all duration-200`}
-                onClick={() => navigate(`/subject/${topic._id}`)}
-              >
-                <span className='text-4xl font-bold px-4 flex items-center gap-5'>
-                  {(idx + 1 < 10 ? "0" + (idx + 1) : idx + 1)}
-                  <svg width="1" height="50" fill='black' xmlns="http://www.w3.org/2000/svg">
-                    <line x1="1" y1="0" x2="1" y2="100" stroke={darkMode ? 'white' : 'black'} strokeWidth="2" />
-                  </svg>
-                </span>
+            filteredTopics.map((topic: Topic, idx: number) => {
+              const handleDeleteClick = (e: React.MouseEvent) => {
+                e.stopPropagation(); // prevent navigation
+                if (window.confirm(`Are you sure you want to delete "${topic.title}"?`)) {
+                  deleteTopic(topic._id);
+                }
+              };
 
-                <div className='flex flex-col text-left text-sm w-full'>
-                  <div className='text-xl w-full tracking-wider flex items-center justify-between pr-3 font-normal'>
-                    <span style={{ fontWeight: "2rem" }}>{topic.title}</span>
-                    <span className='text-sm mt-3 tracking-wide text-zinc-500 font-semibold relative -top-1'>
-                      {topic.dueDate ? new Date(topic.dueDate).toLocaleDateString("en-UK", options4) : "-"}
+              return (
+                <div
+                  key={topic._id ?? idx}
+                  className={`w-full rounded-2xl ${darkMode ? "bg-zinc-950 hover:bg-zinc-900" : "bg-zinc-50 hover:bg-zinc-100"} group p-3 shadow-md flex items-center gap-4 cursor-pointer transition-all duration-200`}
+                  onClick={() => navigate(`/subject/${topic._id}`)}
+                >
+                  <span className='text-4xl font-bold px-4 flex items-center gap-5'>
+                    {(idx + 1 < 10 ? "0" + (idx + 1) : idx + 1)}
+                    <svg width="1" height="50" fill='black' xmlns="http://www.w3.org/2000/svg">
+                      <line x1="1" y1="0" x2="1" y2="100" stroke={darkMode ? 'white' : 'black'} strokeWidth="2" />
+                    </svg>
+                  </span>
+
+                  <div className='flex flex-col text-left text-sm w-full'>
+                    <div className='text-xl w-full tracking-wider flex items-center justify-between pr-3 font-normal'>
+                      <span style={{ fontWeight: "2rem" }}>{topic.title}</span>
+                      <span className='text-sm mt-3 tracking-wide text-zinc-500 font-semibold relative -top-1'>
+                        {topic.dueDate ? new Date(topic.dueDate).toLocaleDateString("en-UK", options4) : "-"}
+                      </span>
+                    </div>
+                    <span className={`text-sm tracking-wide ${darkMode ? "text-zinc-300" : "text-zinc-600"} flex items-center pr-3 transition-all duration-100 justify-between`}>
+                      {topic.description}
+                      <div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+                        <div 
+                          className='h-fit w-fit p-2 rounded-xl bg-red-100 cursor-pointer'
+                          onClick={handleDeleteClick}
+                        >
+                          <FiTrash stroke='red' />
+                        </div>
+                        <div className={`${darkMode ? "bg-zinc-900" : "bg-white"} h-fit w-fit p-2 rounded-full shadow transition-transform duration-200`}>
+                          <FiArrowRight />
+                        </div>
+                      </div>
                     </span>
                   </div>
-                  <span className={`text-sm tracking-wide ${darkMode ? "text-zinc-300" : "text-zinc-600"} flex items-center pr-3 group-hover:translate-x-4 transition-all duration-100 justify-between`}>
-                    {topic.description}
-                    <div className={`${darkMode ? "bg-zinc-900" : "bg-white"} h-fit w-fit p-2 rounded-full shadow`}>
-                      <FiArrowRight />
-                    </div>
-                  </span>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className='w-full text-center py-10 text-gray-500 text-lg'>
               No Topics Due for now
             </div>
           )}
         </div>
-
       </motion.div>
     </motion.div>
   );

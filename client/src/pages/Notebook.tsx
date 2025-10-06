@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FiArrowRight, FiCalendar, FiClock, FiDownload, FiPlus } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiClock, FiDownload, FiPlus, FiTrash } from 'react-icons/fi';
 import { MdInfo } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import { getComputedData, hexToRgba } from '../assets/functions';
 import { basic } from '../assets/Illustraitions/basics';
 import type { Notebook } from '../assets/types';
 import CreateNotebookForm from '../components/CreateNotebookForm';
+import { toast } from 'sonner';
+import { deleteResource } from '../sources/notebookServices';
 
 interface NotebookProps {
   darkMode: boolean;
@@ -29,6 +31,26 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
   if (!notebookData.length) return <div>Loading notebooks...</div>;
 
   const selectedNotebook = notebookData[selected];
+
+const deleteNotebook = async (notebookId?: string) => {
+  if (!notebookId) return;
+
+  try {
+    // TODO: call backend API if needed
+    await deleteResource(notebookId);
+
+    setNotebook(prev => prev.filter(nb => nb._id !== notebookId));
+
+    // Adjust selected index if needed
+    setSelected(prev => Math.max(prev - 1, 0));
+
+    toast.success("Notebook deleted successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete notebook");
+  }
+};
+
 
   return (
     <div
@@ -153,7 +175,7 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
 
             {/* Arrow Button (Top Right) */}
             <div className="relative -left-4">
-              <button className="h-fit w-fit p-3 bg-zinc-100 rounded-full border-lg border-zinc-900">
+              <button className="h-fit w-fit p-3 bg-zinc-100 rounded-full border-lg border-zinc-900" onClick={() => navigate(`/notebook/${selectedNotebook._id}`)}>
                 <FiArrowRight />
               </button>
             </div>
@@ -178,7 +200,7 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
           </div>
 
           {/* Description + Subjects Section */}
-          <div className="h-fit border p-5 rounded-xl border-zinc-300 text-md tracking-wider flex flex-col gap-2">
+          <div className="max-h-[20rem] overflow-scroll my-scrollbar border p-5 rounded-xl border-zinc-300 text-md tracking-wider flex flex-col gap-2">
             {(selectedNotebook.subjects?.length ?? 0) > 2 ? (
               <>
                 <span>Description</span>
@@ -201,7 +223,7 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
 
             {/* Subjects Table (Visible when expanded) */}
             {expanded && selectedNotebook.subjects?.length ? (
-              <table className="mt-5 bg-zinc-100 p-4 rounded-xl">
+              <table className="mt-5 bg-zinc-100 p-4 rounded-xl ">
                 <thead>
                   <tr>
                     <td className="p-2">Subject</td>
@@ -246,6 +268,14 @@ const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
                 {'235MB'}
                 <FiDownload size={24} />
               </span>
+            </div>
+            
+            {/* DELETE PART */}
+            <div 
+              className='h-fit w-full p-3 rouned-xl bg-red-100 mt-3 flex items-center rounded-xl justify-between px-8 text-red-900'
+              onClick={() => deleteNotebook(selectedNotebook._id)}
+            >
+              Delete this notebook&nbsp;&nbsp;&nbsp;<FiTrash stroke='red' />
             </div>
           </div>
         </div>

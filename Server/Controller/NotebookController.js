@@ -242,4 +242,85 @@ export const updatePage = async(req, res) => {
   }
 }
 
+export const DELETE = async (req, res) => {
+  try {
+    const { notebookId, subjectId, topicId, contentId } = req.params;
+    const userId = req.user._id;
+
+    // At least notebookId must exist
+    if (!notebookId) {
+      return res.status(400).json({ message: "Notebook ID is required" });
+    }
+
+    // Find the notebook
+    const notebook = await Notebook.findOne({ _id: notebookId, userId });
+    if (!notebook) {
+      return res.status(404).json({ message: "Notebook not found" });
+    }
+
+    // --- CASE 1: DELETE entire NOTEBOOK ---
+    if (!subjectId && !topicId && !contentId) {
+      await Notebook.deleteOne({ _id: notebookId, userId });
+      return res.status(200).json({ message: "Notebook deleted successfully" });
+    }
+
+    // --- CASE 2: DELETE a SUBJECT ---
+    if (subjectId && !topicId && !contentId) {
+      notebook.subjects = notebook.subjects.filter(
+        (sub) => sub._id.toString() !== subjectId
+      );
+      await notebook.save();
+      return res.status(200).json({ message: "Subject deleted successfully" });
+    }
+
+    // --- CASE 3: DELETE a TOPIC inside a SUBJECT ---
+    if (subjectId && topicId && !contentId) {
+      const subject = notebook.subjects.find(
+        (sub) => sub._id.toString() === subjectId
+      );
+      if (!subject)
+        return res.status(404).json({ message: "Subject not found" });
+
+      subject.topics = subject.topics.filter(
+        (topic) => topic._id.toString() !== topicId
+      );
+
+      await notebook.save();
+      return res.status(200).json({ message: "Topic deleted successfully" });
+    }
+
+    // --- CASE 4: DELETE a PAGE/CONTENT inside a TOPIC ---
+    if (subjectId && topicId && contentId) {
+      const subject = notebook.subjects.find(
+        (sub) => sub._id.toString() === subjectId
+      );
+      if (!subject)
+        return res.status(404).json({ message: "Subject not found" });
+
+      const topic = subject.topics.find(
+        (t) => t._id.toString() === topicId
+      );
+      if (!topic)
+        return res.status(404).json({ message: "Topic not found" });
+
+      topic.content = topic.content.filter(
+        (page) => page._id.toString() !== contentId
+      );
+
+      await notebook.save();
+      return res.status(200).json({ message: "Page deleted successfully" });
+    }
+
+    // --- If request doesn't match any pattern ---
+    return res.status(400).json({ message: "Invalid deletion parameters" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({
+      message: "Error occurred while deleting",
+      error: error.message,
+    });
+  }
+};
+
+
 export default CreateNewNotebook;

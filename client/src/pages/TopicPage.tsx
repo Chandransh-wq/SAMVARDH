@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
-import { FiCalendar, FiEdit, FiPlus, FiSearch } from 'react-icons/fi';
+import { FiCalendar, FiDelete, FiEdit, FiPlus, FiSearch, FiTrash } from 'react-icons/fi';
 import { IoIosArrowDown } from "react-icons/io";
 import Input from '../components/Input';
 import { getComputedData, getRandomColor } from '../assets/functions';
@@ -10,6 +10,8 @@ import ToolBar from '../components/ToolBar';
 import Content from '../components/Content';
 import { type Notebook, type Topic } from '../assets/types';
 import CreateContentForm from '../components/CreateContentForm';
+import { deleteResource, updateContent } from '../sources/notebookServices';
+import { toast } from 'sonner';
 
 interface TopicProps {
   darkMode: boolean;
@@ -31,7 +33,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
   const [topicContent, setTopicContent] = useState<PageContent[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState<string>("");
-  const [isSaved, setIsSaved] = useState<boolean>(true);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +42,8 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
     };
     fetchData();
   }, []);
+
+
 
   const { topic, subjectId, notebookId } = useMemo(() => {
     let topic: Topic | undefined;
@@ -107,6 +111,43 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
   const option2: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", year: "numeric", day: "numeric" };
   const today = new Date();
 
+
+  if(isSaved) {
+    const notebookIds = notebookId ;
+    const subjectIds = subjectId;
+    const topicId = topic?._id ?? "";
+    const contentId = topic?.content?.[selected]._id;
+    const newData = { 
+      pageTitle: "TEST",
+      pageContent: content
+    }
+    updateContent(newData, notebookIds, subjectIds, topicId, contentId);
+    toast.success("Content is updated successfully(Please refresh the page)")
+    setIsSaved(false)
+    console.log(notebookId)
+  }
+
+const deletePage = async () => {
+  try {
+    const contentId = topic?.content?.[selected]?._id;
+    if (!contentId) return;
+
+    await deleteResource(notebookId, subjectId, topic?._id, contentId);
+
+    // Remove from local state
+    setTopicContent(prev => prev.filter(c => c._id !== contentId));
+
+    // Update selected index
+    setSelected(prev => (prev > 0 ? prev - 1 : 0));
+
+    toast.success("Page deleted successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete page");
+  }
+};
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -140,7 +181,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
       {/* Left Sidebar */}
       <div className={`w-1/4 text-lg ${darkMode ? "bg-zinc-950" : "bg-white"} rounded-3xl h-[99%] overflow-scroll my-scrollbar shadow-md p-6 text-left`}>
         <span className='text-xl tracking-wider' style={{ fontWeight: 500 }}>
-          {topic?.title ?? "Topic not found"}
+          Topic: {topic?.title ?? "Topic not found"}
         </span>
         <div className='flex items-center gap-4 border p-2 rounded-full px-4 pr-10 mt-5'>
           <FiSearch />
@@ -184,12 +225,20 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
                     </span>
                   )}
                 </div>
+                <div 
+                  className='h-fit w-fit p-2 rounded-xl bg-red-100 ml-auto' 
+                  onClick={deletePage}
+                >
+                  <FiTrash stroke='red' />
+                </div>
               </div>
               <div className='flex flex-col gap-2'>
                 <span className='text-lg font-bold tracking-wide mt-2'>{page.page}</span>
                 {page.pageContent && (
                   <span className='w-[calc(100%-1rem)]'>
-                    {page.pageContent}
+                    {page.pageContent.length > 100 
+                      ? page.pageContent.slice(0, 100)+"........" 
+                      : page.pageContent}
                   </span>
                 )}
               </div>
@@ -227,7 +276,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
               <ToolBar darkMode={darkMode} setIsSaved={setIsSaved} isSaved={isSaved} />
             </div>
 
-            <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-zinc-50"} shadow-md p-7 overflow-scroll my-scrollbar pb-0`}>
+            <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-white"} shadow-md p-4 overflow-scroll my-scrollbar pb-0`}>
               <Content
                 darkMode={darkMode}
                 text={content}

@@ -8,6 +8,7 @@ interface CreateNotebookFormProps {
   setOpen: (open: boolean) => void;
   id: string;
   onCreated?: (subject: Subject) => void; // ✅ Add this callback
+  isVisible?: boolean
 }
 
 interface NewSubject {
@@ -22,11 +23,11 @@ interface NewSubject {
 const COLORS = ["#F87171", "#FBBF24", "#34D399", "#60A5FA", "#A78BFA"];
 const TAGS = [
   "Computer", "Programming", "Math", "Chemistry", "Physics", "Astronomy", 
-  "Environment", "Finance", "Art", "AI", "Psychology", "Sociology", 
+  "Enviorment", "Finance", "Art", "AI", "Psychology", "Sociology", 
   "Communication", "Language", "Other"
 ];
 
-const CreateSubjectForm: React.FC<CreateNotebookFormProps> = ({ darkMode, id, setOpen, onCreated }) => {
+const CreateSubjectForm: React.FC<CreateNotebookFormProps> = ({ darkMode, id, setOpen, isVisible, onCreated }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [importance, setImportance] = useState(1);

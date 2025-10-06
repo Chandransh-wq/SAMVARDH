@@ -43,8 +43,8 @@ const ToolBar: React.FC<ToolBarProps> = ({ darkMode, onAction, isSaved, setIsSav
 
   return (
     <div
-      className={`h-[4rem] px-3 flex items-center gap-2 w-full rounded-3xl ${
-        darkMode ? 'bg-zinc-800 text-white' : 'bg-zinc-100 text-black'
+      className={`h-[4rem] px-3 flex items-center gap-2 shadow-md w-full rounded-3xl ${
+        darkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'
       }`}
     >
       {buttons.map((btn) => (
