@@ -1,17 +1,22 @@
-// File: TopicPage.tsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
-import { FiCalendar, FiDelete, FiEdit, FiPlus, FiSearch, FiTrash } from 'react-icons/fi';
+import { 
+  FiCalendar, FiEdit, FiPlus, FiSearch, FiTrash 
+} from 'react-icons/fi';
 import { IoIosArrowDown } from "react-icons/io";
+import { 
+  FaBold, FaItalic, FaUnderline, FaStrikethrough, 
+  FaListUl, FaListOl, FaLink, FaUndo, FaRedo, FaSave 
+} from 'react-icons/fa';
+import { BsGlobe2 } from 'react-icons/bs'
 import Input from '../components/Input';
-import { getComputedData, getRandomColor } from '../assets/functions';
-import ToolBar from '../components/ToolBar';
 import Content from '../components/Content';
-import { type Notebook, type Topic } from '../assets/types';
 import CreateContentForm from '../components/CreateContentForm';
+import { getComputedData, getRandomColor } from '../assets/functions';
 import { deleteResource, updateContent } from '../sources/notebookServices';
 import { toast } from 'sonner';
+import { type Notebook, type Topic } from '../assets/types';
 
 interface TopicProps {
   darkMode: boolean;
@@ -43,8 +48,6 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
     fetchData();
   }, []);
 
-
-
   const { topic, subjectId, notebookId } = useMemo(() => {
     let topic: Topic | undefined;
     let subjectId = "";
@@ -64,16 +67,11 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
       }
       if (topic) break;
     }
-
     return { topic, subjectId, notebookId };
   }, [notebookData, id]);
 
-  // --------------------------
-  // FIXED: Simple extractor
-  // --------------------------
   const extractCreatedContent = (payload: any): PageContent | null => {
     if (!payload) return null;
-
     return {
       _id: payload._id ?? payload.id ?? Math.random().toString(36).slice(2),
       page: payload.page ?? "Untitled",
@@ -84,7 +82,6 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
     };
   };
 
-  // Normalize initial topic content
   useEffect(() => {
     const normalized = (topic?.content ?? []).map((c: any) => ({
       _id: c._id ?? c.id ?? Math.random().toString(36).slice(2),
@@ -98,7 +95,6 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
     setSelected(normalized.length > 0 ? 0 : -1);
   }, [topic]);
 
-  // Sync selected page content safely
   useEffect(() => {
     if (selected >= 0 && selected < topicContent.length) {
       setContent(topicContent[selected].pageContent ?? "");
@@ -111,42 +107,60 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
   const option2: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", year: "numeric", day: "numeric" };
   const today = new Date();
 
+  useEffect(() => {
+    if (!isSaved) return;
+    if (!topic) return;
 
-  if(isSaved) {
-    const notebookIds = notebookId ;
+    const notebookIds = notebookId;
     const subjectIds = subjectId;
-    const topicId = topic?._id ?? "";
-    const contentId = topic?.content?.[selected]._id;
-    const newData = { 
-      pageTitle: "TEST",
-      pageContent: content
-    }
-    updateContent(newData, notebookIds, subjectIds, topicId, contentId);
-    toast.success("Content is updated successfully(Please refresh the page)")
-    setIsSaved(false)
-    console.log(notebookId)
-  }
-
-const deletePage = async () => {
-  try {
+    const topicId = topic._id ?? "";
     const contentId = topic?.content?.[selected]?._id;
-    if (!contentId) return;
 
-    await deleteResource(notebookId, subjectId, topic?._id, contentId);
+    const newData = { 
+      pageTitle: topicContent[selected]?.page ?? "Untitled",
+      pageContent: content
+    };
+    updateContent(newData, notebookIds, subjectIds, topicId, contentId)
+      .then(() => toast.success("Content updated successfully"))
+      .catch(() => toast.error("Failed to update content"))
+      .finally(() => setIsSaved(false));
+  }, [isSaved]);
 
-    // Remove from local state
-    setTopicContent(prev => prev.filter(c => c._id !== contentId));
+  const deletePage = async () => {
+    try {
+      const contentId = topic?.content?.[selected]?._id;
+      if (!contentId) return;
+      await deleteResource(notebookId, subjectId, topic?._id, contentId);
+      setTopicContent(prev => prev.filter(c => c._id !== contentId));
+      setSelected(prev => (prev > 0 ? prev - 1 : 0));
+      toast.success("Page deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete page");
+    }
+  };
 
-    // Update selected index
-    setSelected(prev => (prev > 0 ? prev - 1 : 0));
+  // --------------------------
+  // INLINE TOOLBAR
+  // --------------------------
+  const toolbarButtons = [
+    { icon: <FaBold />, action: 'bold', label: 'Bold' },
+    { icon: <FaItalic />, action: 'italic', label: 'Italic' },
+    { icon: <FaUnderline />, action: 'underline', label: 'Underline' },
+    { icon: <FaStrikethrough />, action: 'strikethrough', label: 'Strikethrough' },
+    { icon: <FaListUl />, action: 'unordered-list', label: 'Unordered List' },
+    { icon: <FaListOl />, action: 'ordered-list', label: 'Ordered List' },
+    { icon: <FaLink />, action: 'link', label: 'Insert Link' },
+    { icon: <FaUndo />, action: 'undo', label: 'Undo' },
+    { icon: <FaRedo />, action: 'redo', label: 'Redo' },
+    { icon: <BsGlobe2 />, action: 'get', label: 'Get' },
+    { icon: <FaSave />, action: 'save', label: isSaved ? 'Saved' : 'Save' },
+  ];
 
-    toast.success("Page deleted successfully");
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to delete page");
-  }
-};
-
+  const handleToolbarClick = (action: string) => {
+    if (action === 'save') setIsSaved(true);
+    // Here you can add bold/italic/etc logic if using a rich text editor
+  };
 
   return (
     <motion.div
@@ -155,6 +169,7 @@ const deletePage = async () => {
       transition={{ duration: 0.4 }}
       className={`${darkMode ? 'primary-dark' : 'primary-light'} flex justify-evenly h-[92vh] absolute md:top-[4.5rem] pt-5 top-0 left-0 w-screen pl-[7rem] gap-5 pr-5`}
     >
+      {/* Create Form */}
       {showForm && (
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
           <CreateContentForm
@@ -164,11 +179,8 @@ const deletePage = async () => {
             setOpen={setShowForm}
             darkMode={darkMode}
             onContentCreated={(serverPayload) => {
-              console.log("Server payload received:", serverPayload);
               const created = extractCreatedContent(serverPayload);
-              console.log("Parsed content object:", created);
               if (!created) return;
-
               setTopicContent(prev => [created, ...prev]);
               setSelected(0);
               setContent(created.pageContent ?? "");
@@ -197,14 +209,11 @@ const deletePage = async () => {
           </button>
         </div>
         <div className='flex flex-col gap-6'>
-          {topicContent.map((page) => (
+          {topicContent.map((page, idx) => (
             <div
               key={page._id}
-              className={`p-5 border rounded-3xl ${darkMode ? "border-zinc-800 shadow-md shadow-white/10" : "border-zinc-400 shadow-md"} pt-4 pl-4 ${page._id === topicContent[selected]?._id ? "ring-2 ring-blue-500" : ""}`}
-              onClick={() => {
-                const idx = topicContent.findIndex(p => p._id === page._id);
-                if (idx !== -1) setSelected(idx);
-              }}
+              className={`p-5 border rounded-3xl ${darkMode ? "border-zinc-800 shadow-md shadow-white/10" : "border-zinc-400 shadow-md"} pt-4 pl-4 ${idx === selected ? "ring-2 ring-blue-500" : ""}`}
+              onClick={() => setSelected(idx)}
             >
               <div className='flex gap-4 items-center'>
                 <span className='flex items-center gap-2 py-1'>
@@ -270,10 +279,21 @@ const deletePage = async () => {
                   </div>
                 </div>
               </div>
-              <span className='flex items-center gap-2'>
-                <FiCalendar /> Created At: {topicContent[selected].createdAt ? new Date(topicContent[selected].createdAt).toLocaleDateString("en-UK", option1) : ""}
-              </span>
-              <ToolBar darkMode={darkMode} setIsSaved={setIsSaved} isSaved={isSaved} />
+              {/* INLINE TOOLBAR */}
+              <div
+                className={`h-[4rem] px-3 flex items-center gap-2 shadow-md w-full rounded-3xl ${darkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}
+              >
+                {toolbarButtons.map((btn) => (
+                  <button
+                    key={btn.action}
+                    title={btn.label}
+                    className={`p-2 rounded transition-colors ${darkMode ? 'hover:bg-zinc-700/50' : 'hover:bg-zinc-300/30'}`}
+                    onClick={() => handleToolbarClick(btn.action)}
+                  >
+                    {btn.icon}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-white"} shadow-md p-4 overflow-scroll my-scrollbar pb-0`}>

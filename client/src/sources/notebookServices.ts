@@ -1,5 +1,5 @@
 // src/sources/notebookServices.ts
-import type { Subject, Topic } from '../assets/types';
+import type { Notebooks, Subject, Topic } from '../assets/types';
 import api from './api';
 
 // ------------------ Payload Types ------------------
@@ -76,7 +76,7 @@ export const getNotebooks = async (): Promise<Notebook[]> => {
 };
 
 // ---------------- CREATE ----------------
-export const createNotebook = async (data: Omit<Notebook, "_id">): Promise<Notebook> => {
+export const createNotebook = async (data: Omit<Notebooks, "_id">): Promise<Notebooks> => {
   const token = localStorage.getItem("token") || "";
   const res = await api.post<Notebook>("/notebook/create", data, {
     headers: { Authorization: `Bearer ${token}` },

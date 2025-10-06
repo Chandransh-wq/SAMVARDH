@@ -34,14 +34,18 @@ export const getComputedData = async () => {
     )
   );
 
-  return { notebooks, subjects, topics };
+  const notebookLength = notebooks.length;
+  const subjectLength = subjects.length;
+  const topicLength = topics.length
+
+  return { notebooks, notebookLength, subjects, subjectLength, topics, topicLength };
 };
 
 /** Filter topics by date string (YYYY-MM-DD) */
 const TopicArray = async (date: string): Promise<Topic[]> => {
   const { topics } = await getComputedData();
   return topics.filter(topic => {
-    const topicDateObj = new Date(topic.dueDate);
+    const topicDateObj = new Date(topic.dueDate ?? "");
     const topicDateStr = topicDateObj.toISOString().split('T')[0]; // "YYYY-MM-DD"
     return topicDateStr === date;
   });

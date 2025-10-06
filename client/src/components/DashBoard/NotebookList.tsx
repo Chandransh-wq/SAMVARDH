@@ -50,7 +50,7 @@ const NotebookList: React.FC<NotebookListProps> = ({ darkMode }) => {
 
         return (
           <div
-            key={notebook.id}
+            key={notebook._id}
             className={`border ${
               darkMode ? "border-zinc-700 secondary-dark" : "border-gray-300 primary-light"
             } p-4 m-2 rounded-lg hover:scale-105 w-full transition-transform cursor-pointer text-left flex items-center gap-2 shadow-md`}

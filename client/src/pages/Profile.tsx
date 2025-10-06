@@ -1,9 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "../components/Card";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/Avatar";
-import { notebookData } from "../assets/demodata";
-import { getInitials } from "../assets/functions";
-import { Book, NotebookPen, Tags } from "lucide-react";
+
 
 interface Activity {
   doneAt: string;

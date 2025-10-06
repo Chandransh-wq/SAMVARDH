@@ -13,7 +13,7 @@ interface NotebookProps {
   darkMode: boolean;
 }
 
-const Notebook: React.FC<NotebookProps> = ({ darkMode }) => {
+const Notebooks: React.FC<NotebookProps> = ({ darkMode }) => {
   const [selected, setSelected] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const [notebookData, setNotebook] = useState<Notebook[]>([]);
@@ -284,4 +284,4 @@ const deleteNotebook = async (notebookId?: string) => {
   );
 };
 
-export default Notebook;
+export default Notebooks;

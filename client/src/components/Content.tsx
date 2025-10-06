@@ -49,6 +49,7 @@ const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }
 
   return (
     <>
+    <div className='hidden'>{isSaved ? "true" : "false"}</div>
     <div
       ref={ref}
       contentEditable

@@ -14,7 +14,7 @@ export interface Topic {
   color: string;
   importance?: number;
   description: string;
-  dueDate?: string;
+  dueDate: string;
   content?: Content[];
   subjectId?: string;
   subjectTitle?: string;
@@ -61,6 +61,18 @@ export interface Subjects {
 // Notebook
 export interface Notebook {
   _id?: string; // optional, will be _id in Mongo
+  title: string;
+  icon?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  favorite?: boolean;
+  color?: string;
+  userId: string; // ObjectId string
+  subjects?: Subject[];
+}
+
+export interface Notebooks {
   title: string;
   icon?: string;
   description?: string;

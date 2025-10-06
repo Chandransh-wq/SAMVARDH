@@ -51,7 +51,7 @@ const CreateContentForm: React.FC<CreateContentFormProps> = ({
     try {
       const newPage: NewPage = {
         page: page.trim(),
-        pageContent: pageContent.trim(),
+        pageContent: "Start typing",
         tags: selectedTags,
         createdAt: new Date().toISOString(),
         editedAt: new Date().toISOString(),
@@ -90,6 +90,7 @@ const CreateContentForm: React.FC<CreateContentFormProps> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="hidden">{pageContent}</div>
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => setOpen(false)}
@@ -126,21 +127,7 @@ const CreateContentForm: React.FC<CreateContentFormProps> = ({
             />
           </div>
 
-          {/* Description */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              value={pageContent}
-              onChange={(e) => setPageContent(e.target.value)}
-              rows={4}
-              className={`rounded-md px-3 py-2 border resize-none focus:outline-none ${
-                darkMode
-                  ? "border-zinc-700 bg-zinc-800 text-white focus:border-blue-500"
-                  : "border-zinc-400 bg-white text-black focus:border-blue-500"
-              }`}
-            />
-          </div>
+
 
           {/* Tags */}
           <div className="flex flex-col gap-1">

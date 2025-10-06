@@ -177,7 +177,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
             onCreated={(newSubject: Subjects) => {
               if (!newSubject) return;
               setNotebook(prev => prev.map(nb => nb._id === id ? { ...nb, subjects: [...(nb.subjects ?? []), newSubject] } : nb));
-              setSelected(prev => (notebook?.subjects?.length ?? 0));
+              setSelected(() => (notebook?.subjects?.length ?? 0));
               setShowForm(false);
             }}
           />

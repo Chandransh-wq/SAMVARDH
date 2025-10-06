@@ -4,7 +4,7 @@ import Dashboard from './pages/Dashboard'
 import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import Notebook from './pages/Notebook'
+import Notebooks from './pages/Notebook'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Subject from './pages/Subject'
@@ -42,7 +42,7 @@ function App() {
           path="/notebooks"
           element={
             <ProtectedRoute>
-              <Notebook darkMode={darkMode} />
+              <Notebooks darkMode={darkMode} />
             </ProtectedRoute>
           }
         />
