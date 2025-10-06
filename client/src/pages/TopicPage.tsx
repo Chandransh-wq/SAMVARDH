@@ -120,7 +120,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
       pageTitle: topicContent[selected]?.page ?? "Untitled",
       pageContent: content
     };
-    updateContent(newData, notebookIds, subjectIds, topicId, contentId)
+    updateContent(newData, notebookIds, subjectIds, topicId, contentId ?? "")
       .then(() => toast.success("Content updated successfully"))
       .catch(() => toast.error("Failed to update content"))
       .finally(() => setIsSaved(false));

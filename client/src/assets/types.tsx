@@ -1,5 +1,6 @@
 // Single page/content within a topic
 export interface Content {
+  _id: string;
   page: string;
   pageContent?: string;
   createdAt?: string;
