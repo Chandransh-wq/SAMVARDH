@@ -7,9 +7,12 @@ interface ContentProps {
   text: string;
   setContent: (content: string) => void;
   isSaved?: boolean;
+  content: string;
+  webForm: boolean;
+  setWebForm: (state: boolean) => void;
 }
 
-const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }) => {
+const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved, content, webForm, setWebForm }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [wikiQuery, setWikiQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -69,7 +72,10 @@ const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }
     try {
       const wikiData: WikiData | null = await fetchWikiFromBackend(wikiQuery);
       if (wikiData) {
-        setContent(prev => prev + "\n\n" + wikiData.content);
+        if(content == "Start typing")
+          setContent(wikiData.content)
+        else
+          setContent(prev => prev + "\n\n" + wikiData.content);
         toast.success(`Inserted content from ${wikiData.title}`);
       } else {
         toast.error("Page not found on Wikipedia");
@@ -78,6 +84,7 @@ const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }
       toast.error("Failed to fetch Wikipedia page");
     } finally {
       setLoading(false);
+      setWebForm(false)
     }
   };
 
@@ -122,23 +129,25 @@ const Content: React.FC<ContentProps> = ({ darkMode, text, setContent, isSaved }
       <div className='hidden'>{isSaved ? "true" : "false"}</div>
 
       {/* Wikipedia fetch */}
-      <div className="my-4 flex gap-2 items-center">
-        <input
-          type="text"
-          placeholder="Enter Wikipedia page"
-          className="border rounded px-3 py-1 flex-1"
-          value={wikiQuery}
-          onChange={(e) => setWikiQuery(e.target.value)}
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-1 rounded disabled:opacity-50"
-          onClick={handleWikiFetch}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Get"}
-        </button>
-      </div>
-
+      {webForm &&
+        <div className="my-4 flex gap-2 items-center h-fit w-fit bg-white shadow-md absolute p-4 z-20 left-[50%] top-[50%]">
+          <label>Acess an information</label>
+          <input
+            type="text"
+            placeholder="Enter Wikipedia page"
+            className="border rounded px-3 py-1 flex-1"
+            value={wikiQuery}
+            onChange={(e) => setWikiQuery(e.target.value)}
+          />
+          <button
+            className="bg-blue-500 text-white px-4 py-1 rounded disabled:opacity-50"
+            onClick={handleWikiFetch}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Get"}
+          </button>
+        </div>
+      }
       {/* Editable content area */}
       <div
         ref={ref}

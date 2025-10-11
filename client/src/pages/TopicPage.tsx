@@ -39,6 +39,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState<string>("");
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [openFormWeb, setOpenFormWeb] = useState<boolean>(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,6 +160,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
 
   const handleToolbarClick = (action: string) => {
     if (action === 'save') setIsSaved(true);
+    if (action === 'get' ) setOpenFormWeb(true)
     // Here you can add bold/italic/etc logic if using a rich text editor
   };
 
@@ -300,9 +302,12 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
             <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-white"} shadow-md p-4 overflow-scroll my-scrollbar pb-0`}>
               <Content
                 darkMode={darkMode}
+                content={content}
                 text={content}
                 setContent={setContent}
                 isSaved={isSaved}
+                webForm={openFormWeb}
+                setWebForm={setOpenFormWeb}
               />
             </div>
           </>
