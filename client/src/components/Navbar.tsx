@@ -1,6 +1,7 @@
 import React from 'react'
 import { FiSearch, FiHome, FiLogOut, FiMoon, FiSun, FiBell, FiBook, FiUser } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface NavbarProps {
     darkMode?: boolean;
@@ -29,8 +30,15 @@ const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
             <div className={`h-auto w-auto border-2 ${darkMode ? "border-zinc-700" : "border-gray-300"} rounded-full p-2 cursor-pointer hover:bg-zinc-800 transition-colors duration-300`}>
             <FiBell size={20} className="rounded-full cursor-pointer transition-colors duration-300"/>
             </div>
-            <div className={`h-auto w-auto bg-red-600 border-red-600 text-white rounded-full p-2 border-2 cursor-pointer 
-            hover:bg-red-700 transition-colors duration-300`}>
+            <div 
+              className={`h-auto w-auto bg-red-600 border-red-600 text-white rounded-full p-2 border-2 cursor-pointer hover:bg-red-700 transition-colors duration-300`}
+              onClick={()=>{
+                localStorage.removeItem('token');
+                navigate('/log')
+                toast.success("Logged out Successfully")
+              }}  
+            >
+                 
           <FiLogOut size={18} />
         </div>
 

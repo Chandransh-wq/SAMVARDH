@@ -172,6 +172,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
         <div className='fixed left-[20.2rem] top-[12rem] z-50'>
           <CreateSubjectForm 
             setOpen={setShowForm}
+            isVisible={showForm}
             id={id ?? ""}
             darkMode={darkMode}
             onCreated={(newSubject: Subjects) => {
@@ -179,6 +180,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
               setNotebook(prev => prev.map(nb => nb._id === id ? { ...nb, subjects: [...(nb.subjects ?? []), newSubject] } : nb));
               setSelected(() => (notebook?.subjects?.length ?? 0));
               setShowForm(false);
+              toast.success("Subject created successfully (please refresh)")
             }}
           />
         </div>
@@ -189,6 +191,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
           <CreateTopicForm
             subjectId={notebook?.subjects?.[selected]?._id ?? ""}
             setOpen={setShowFormTopic}
+            isVisible={showFormTopic}
             id={id ?? ""}
             darkMode={darkMode}
             onCreated={(newTopic: Topic) => {
@@ -201,6 +204,7 @@ const Subject: React.FC<SubjectProps> = ({ darkMode }) => {
                 } : nb)
               );
               setRefresh(prev => prev + 1);
+              toast.success("Topic created successfully")
             }}
           />
         </div>
