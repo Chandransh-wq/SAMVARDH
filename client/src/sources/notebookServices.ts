@@ -1,6 +1,6 @@
 // src/sources/notebookServices.ts
 import type { Notebooks, Subject, Topic } from '../assets/types';
-import api from './api';
+import { api } from './api';
 
 // ------------------ Payload Types ------------------
 

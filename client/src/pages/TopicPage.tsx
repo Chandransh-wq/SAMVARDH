@@ -296,6 +296,7 @@ const TopicPage: React.FC<TopicProps> = ({ darkMode }) => {
               </div>
             </div>
 
+
             <div className={`h-5/6 rounded-2xl w-full ${darkMode ? "bg-zinc-900" : "bg-white"} shadow-md p-4 overflow-scroll my-scrollbar pb-0`}>
               <Content
                 darkMode={darkMode}

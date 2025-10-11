@@ -1,5 +1,5 @@
 // src/sources/userServices.ts
-import api from "./api";
+import { api } from "./api";
 
 export interface User {
   _id: string;

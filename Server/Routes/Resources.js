@@ -3,6 +3,7 @@ import express from "express";
 import { loginUser, registerUser } from "../Controller/userController.js";
 import CreateNewNotebook, { createNewPage, createNewSubject, createNewTopic, DELETE, getAllNotebook, updatePage } from "../Controller/NotebookController.js";
 import authMiddleware from "../MiddleWare/AuthMiddleWare.js";
+import { summarizeText, wiki } from "../Controller/APIcontroller.js";
 
 const router = express.Router();
 
@@ -28,6 +29,11 @@ router.delete('/notebook/:notebookId/:subjectId/:topicId', authMiddleware, DELET
 // DELETE page/content
 router.delete('/notebook/:notebookId/:subjectId/:topicId/:contentId', authMiddleware, DELETE);
 
+// Search Wiki
+router.get('/search/wiki/:title', authMiddleware, wiki);
+
+//Summarize text
+router.post('/summarize', summarizeText)
 
 
 export default router;
